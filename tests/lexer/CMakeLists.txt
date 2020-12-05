@@ -1,6 +1,3 @@
-set(TEST_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
-
-
 add_executable(lexer_tests lexer_tests.c)
 
 target_include_directories(lexer_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)

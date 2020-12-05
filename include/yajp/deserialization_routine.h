@@ -1,6 +1,6 @@
 /* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*-  */
 /*
- * parser.h
+ * deserialization_routine.h
  * Copyright (C) 2020 Sergei Kosivchenko <arhichief@gmail.com> 
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
@@ -19,50 +19,11 @@
  */
 
 
-#ifndef YAJP_DESERIALIZE_H
-#define YAJP_DESERIALIZE_H
+#ifndef YAJP_DESERIALIZATION_ROUTINE_H
+#define YAJP_DESERIALIZATION_ROUTINE_H
 
-#include <stdio.h>
 #include <stdint.h>
 
-typedef int (*yajp_value_setter_t)(const char *name,
-                                   size_t name_size,
-                                   const uint8_t *value,
-                                   size_t value_size,
-                                   void *field,
-                                   void *user_data
-);
+int yajp_parse_int(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field, void *user_data);
 
-typedef struct yajp_deserialization_ctx {
-   int a;       /**< pepper */
-} yajp_deserialization_ctx_t;
-
-/**
- *
- * @param json
- * @param ctx
- * @param result
- * @param user_data
- * @return
- */
-int yajp_deserialize_json_stream(FILE *json,
-                                 const yajp_deserialization_ctx_t *ctx,
-                                 void *result,
-                                 void *user_data);
-
-/**
- *
- * @param json
- * @param json_size
- * @param ctx
- * @param result
- * @param user_data
- * @return
- */
-int yajp_deserialize_json_string(const char *json,
-                                 size_t json_size,
-                                 const yajp_deserialization_ctx_t *ctx,
-                                 void *result,
-                                 void *user_data);
-
-#endif //YAJP_DESERIALIZE_H
+#endif //YAJP_DESERIALIZATION_ROUTINE_H

@@ -23,7 +23,6 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <string.h>
-#include <time.h>
 
 /* headers with testing functions */
 #include "lexer.h"
@@ -867,7 +866,6 @@ static const char json[] = "{\"web-app\": {\n"
                            "    \"taglib-uri\": \"cofax.tld\",\n"
                            "    \"taglib-location\": \"/WEB-INF/tlds/cofax.tld\"}}}";
 
-#define str_size_without_null(str) ((ARR_LEN(str) - 1) * sizeof(*(str)))
 
 #define token_obegin() { .token = YAJP_TOKEN_OBEGIN, .token_size = 0, }
 #define token_oend() { .token = YAJP_TOKEN_OEND, .token_size = 0, }

@@ -43,6 +43,7 @@ endif ()
 set(YAJP_LIB_SOURCES
         deserialization.c
         lexer_misc.c
+        deserialization_routine.c
         ${YAJP_LEXER}
         ${YAJP_PARSER}
         )

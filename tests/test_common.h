@@ -203,5 +203,6 @@ extern const test_case_t test_suite[];
  */
 #define FUNC_NAME(val) STRINGIFY(val)"()"
 
+#define str_size_without_null(str) ((ARR_LEN(str) - 1) * sizeof(*(str)))
 #define ARR_LEN(a) (sizeof(a))/(sizeof(*a))
 #endif //YAJP_TEST_COMMON_H
