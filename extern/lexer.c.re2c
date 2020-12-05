@@ -1,0 +1,120 @@
+/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*-  */
+/*
+ * parser.h
+ * Copyright (C) 2020 Sergei Kosivchenko <arhichief@gmail.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+ * the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+#include <errno.h>
+#include "lexer.h"
+#include "lexer_misc.h"
+
+
+#ifdef YAJP_TRACK_STREAM
+#   define LEXER_DECLARE_COUNTERS(input) int column_num = (input)->column_num, line_num = (input)->line_num
+#   define LEXER_INC_COUNTER_LINE do { column_num = 0; line_num++; } while(0)
+#   define LEXER_INC_COUNTER_COLUMN(val) do { column_num += val;  } while(0)
+#   define LEXER_STORE_COUNTERS(result) do { (result)->column_num = column_num; (result)->column_num = column_num; } while(0)
+#else
+#   define LEXER_DECLARE_COUNTERS(input) {}
+#   define LEXER_INC_COUNTER_LINE do { } while(0)
+#   define LEXER_INC_COUNTER_COLUMN(val) do { } while(0)
+#   define LEXER_STORE_COUNTERS(result) do { } while(0)
+#endif
+
+int yajp_lexer_get_next_token(yajp_lexer_input_t *input, yajp_lexer_token_t *token) {
+    /*!max:re2c*/
+
+    int ret = 0;
+    LEXER_DECLARE_COUNTERS(input);
+
+    /*
+     * Source code for scanner was taken from
+     * https://fuchsia.googlesource.com/third_party/json/+/develop/src/json.hpp.re2c
+     * and modified for yajp needs
+     */
+
+    errno = 0;
+
+loop:
+    input->token = input->cursor; // save start position of scanning token
+    /*!re2c
+        re2c:api:style              = free-form;
+        re2c:define:YYCTYPE         = uint8_t;
+        re2c:variable:yych          = picked_char;      // override the name of the yych variable to use it in LEXER_INC_COUNTER_COLUMN macro
+        re2c:define:YYCURSOR        = input->cursor;
+        re2c:define:YYMARKER        = input->marker;
+        re2c:define:YYLIMIT         = input->limit;
+        re2c:define:YYFILL          = "{ if (0 != yajp_lexer_fill_input(input, @@)) { return -1; } }";
+
+        // Rules
+        // ignore whitespaces
+        nl                          = [\n\r]+;
+        nl                          { LEXER_INC_COUNTER_LINE; goto loop; }
+        ws                          = [ \t]+;
+        ws                          { LEXER_INC_COUNTER_COLUMN(1); goto loop; }
+        // ignore byte-order-mark (BOM)
+        bom                         = "\xEF\xBB\xBF";
+        bom                         { goto loop; }
+        // json structure characters
+        "["                         { ret = yajp_lexer_pick_token(YAJP_TOKEN_ABEGIN, input, token); LEXER_INC_COUNTER_COLUMN(1); goto end; }
+        "]"                         { ret = yajp_lexer_pick_token(YAJP_TOKEN_AEND, input, token); LEXER_INC_COUNTER_COLUMN(1); goto end; }
+        "{"                         { ret = yajp_lexer_pick_token(YAJP_TOKEN_OBEGIN, input, token); LEXER_INC_COUNTER_COLUMN(1); goto end; }
+        "}"                         { ret = yajp_lexer_pick_token(YAJP_TOKEN_OEND, input, token); LEXER_INC_COUNTER_COLUMN(1); goto end; }
+        ","                         { ret = yajp_lexer_pick_token(YAJP_TOKEN_COMMA, input, token); LEXER_INC_COUNTER_COLUMN(1); goto end; }
+        ":"                         { ret = yajp_lexer_pick_token(YAJP_TOKEN_COLON, input, token); LEXER_INC_COUNTER_COLUMN(1); goto end; }
+
+        // literals
+        'null'                      { ret = yajp_lexer_pick_token(YAJP_TOKEN_NULL, input, token); LEXER_INC_COUNTER_COLUMN(4); goto end; }
+        'true' | 'false'            { ret = yajp_lexer_pick_token(YAJP_TOKEN_BOOLEAN, input, token); LEXER_INC_COUNTER_COLUMN((token->attributes.value_size) / sizeof(picked_char)); goto end; }
+        // number literals
+        decimal_point               = ".";
+        digit                       = [0-9];
+        digit_1_9                   = [1-9];
+        e                           = [eE];
+        minus                       = "-";
+        plus                        = "+";
+        zero                        = "0";
+        exp                         = e (minus | plus)? digit+;
+        frac                        = decimal_point digit+;
+        int                         = (zero | digit_1_9 digit*);
+        number                      = minus? int frac? exp?;
+        number                      { ret = yajp_lexer_pick_token(YAJP_TOKEN_NUMBER, input, token); LEXER_INC_COUNTER_COLUMN((token->attributes.value_size) / sizeof(picked_char)); goto end; }
+        // string literals
+        quotation_mark              = "\"";
+        escape                      = "\\";
+        unescaped                   = [^"\\\x00-\x1f"];
+        single_escaped              = "\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t";
+        unicode_escaped             = "u" [0-9a-fA-F]{4};
+        escaped                     = escape (single_escaped | unicode_escaped);
+        char                        = unescaped | escaped;
+        string                      = quotation_mark char* quotation_mark;
+        string                      { ret = yajp_lexer_pick_token(YAJP_TOKEN_STRING, input, token); LEXER_INC_COUNTER_COLUMN((token->attributes.value_size + 2) / sizeof(picked_char)); goto end; } // +2 for trailing spaces
+        // end of json
+        "\000"                      { ret = yajp_lexer_pick_token(YAJP_TOKEN_EOF, input, token); goto end; }
+        // anything else is error
+        .                           { errno = EINVAL; LEXER_INC_COUNTER_COLUMN(1); ret = -1; goto end; }
+    */
+
+end:
+    LEXER_STORE_COUNTERS(input);
+    return ret;
+}
+
+#undef LEXER_DECLARE_COUNTERS
+#undef LEXER_INC_COUNTER_LINE
+#undef LEXER_INC_COUNTER_COLUMN
+#undef LEXER_STORE_COUNTERS
