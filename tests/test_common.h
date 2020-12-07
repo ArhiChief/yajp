@@ -61,6 +61,13 @@ extern const long test_count;
  */
 extern const test_case_t test_suite[];
 
+#define REGISTER_TEST_CASE(test, test_num, tested_func, test_desc) {            \
+    .name = FUNC_NAME(tested_func)" test "#test_num,                            \
+    .description = "Testing execution of "FUNC_NAME(tested_func)" "test_desc,   \
+    .method = test,                                                             \
+    .argc = 0,                                                                  \
+    .argv = NULL                                                                \
+}
 /**
  * Universal macro for testing expressions
  *  @param expr[in]     Expression what will be test

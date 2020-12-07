@@ -23,7 +23,17 @@
 #define YAJP_DESERIALIZATION_ROUTINE_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
+int yajp_parse_short(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field, void *user_data);
 int yajp_parse_int(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field, void *user_data);
+int yajp_parse_long_int(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field, void *user_data);
+int yajp_parse_long_long_int(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field, void *user_data);
+
+int yajp_parse_float(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field, void *user_data);
+int yajp_parse_double(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field, void *user_data);
+int yajp_parse_long_double(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field, void *user_data);
+
+int yajp_parse_bool(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field, void *user_data);
 
 #endif //YAJP_DESERIALIZATION_ROUTINE_H
