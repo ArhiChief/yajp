@@ -28,163 +28,100 @@
 
 /* test cases prototypes */
 static test_result_t yajp_parse_short_test_null(int argc, char **argv);
-
 static test_result_t yajp_parse_short_test_empty_string(int argc, char **argv);
-
 static test_result_t yajp_parse_short_test_invalid_string(int argc, char **argv);
-
 static test_result_t yajp_parse_short_test_number_with_leading_plus(int argc, char **argv);
-
 static test_result_t yajp_parse_short_test_number_with_leading_minus(int argc, char **argv);
-
 static test_result_t yajp_parse_short_test_number_without_leading_sign(int argc, char **argv);
-
 static test_result_t yajp_parse_short_test_real_number(int argc, char **argv);
-
 static test_result_t yajp_parse_short_test_number_less_than_short_min(int argc, char **argv);
-
 static test_result_t yajp_parse_short_test_number_greater_than_short_max(int argc, char **argv);
 
 static test_result_t yajp_parse_int_test_null(int argc, char **argv);
-
 static test_result_t yajp_parse_int_test_empty_string(int argc, char **argv);
-
 static test_result_t yajp_parse_int_test_invalid_string(int argc, char **argv);
-
 static test_result_t yajp_parse_int_test_number_with_leading_plus(int argc, char **argv);
-
 static test_result_t yajp_parse_int_test_number_with_leading_minus(int argc, char **argv);
-
 static test_result_t yajp_parse_int_test_number_without_leading_sign(int argc, char **argv);
-
 static test_result_t yajp_parse_int_test_real_number(int argc, char **argv);
-
 static test_result_t yajp_parse_int_test_number_less_than_int_min(int argc, char **argv);
-
 static test_result_t yajp_parse_int_test_number_greater_than_int_max(int argc, char **argv);
 
 static test_result_t yajp_parse_long_int_test_null(int argc, char **argv);
-
 static test_result_t yajp_parse_long_int_test_empty_string(int argc, char **argv);
-
 static test_result_t yajp_parse_long_int_test_invalid_string(int argc, char **argv);
-
 static test_result_t yajp_parse_long_int_test_number_with_leading_plus(int argc, char **argv);
-
 static test_result_t yajp_parse_long_int_test_number_with_leading_minus(int argc, char **argv);
-
 static test_result_t yajp_parse_long_int_test_number_without_leading_sign(int argc, char **argv);
-
 static test_result_t yajp_parse_long_int_test_real_number(int argc, char **argv);
-
 static test_result_t yajp_parse_long_int_test_number_less_than_long_int_min(int argc, char **argv);
-
 static test_result_t yajp_parse_long_int_test_number_greater_than_long_int_max(int argc, char **argv);
 
 static test_result_t yajp_parse_long_long_int_test_null(int argc, char **argv);
-
 static test_result_t yajp_parse_long_long_int_test_empty_string(int argc, char **argv);
-
 static test_result_t yajp_parse_long_long_int_test_invalid_string(int argc, char **argv);
-
 static test_result_t yajp_parse_long_long_int_test_number_with_leading_plus(int argc, char **argv);
-
 static test_result_t yajp_parse_long_long_int_test_number_with_leading_minus(int argc, char **argv);
-
 static test_result_t yajp_parse_long_long_int_test_number_without_leading_sign(int argc, char **argv);
-
 static test_result_t yajp_parse_long_long_int_test_real_number(int argc, char **argv);
-
 static test_result_t yajp_parse_long_long_int_test_number_less_than_long_long_int_min(int argc, char **argv);
-
 static test_result_t yajp_parse_long_long_int_test_number_greater_than_long_long_int_max(int argc, char **argv);
 
 static test_result_t yajp_parse_bool_test_null(int argc, char **argv);
-
 static test_result_t yajp_parse_bool_test_empty_string(int argc, char **argv);
-
 static test_result_t yajp_parse_bool_test_true(int argc, char **argv);
-
 static test_result_t yajp_parse_bool_test_false(int argc, char **argv);
-
 static test_result_t yajp_parse_bool_test_invalid_string(int argc, char **argv);
-
 static test_result_t yajp_parse_bool_test_valid_in_content_but_invalid_as_value(int argc, char **argv);
 
 /* test suite declaration and initialization */
 const test_case_t test_suite[] = {
-        REGISTER_TEST_CASE(yajp_parse_short_test_null, 1, yajp_parse_short, " when value is NULL"),
-        REGISTER_TEST_CASE(yajp_parse_short_test_empty_string, 2, yajp_parse_short, " when value is empty string"),
-        REGISTER_TEST_CASE(yajp_parse_short_test_invalid_string, 3, yajp_parse_short, " when value is invalid string"),
-        REGISTER_TEST_CASE(yajp_parse_short_test_number_with_leading_plus, 4, yajp_parse_short,
-                           " when value have leading plus"),
-        REGISTER_TEST_CASE(yajp_parse_short_test_number_with_leading_minus, 5, yajp_parse_short,
-                           " when value have leading minus"),
-        REGISTER_TEST_CASE(yajp_parse_short_test_number_without_leading_sign, 6, yajp_parse_short,
-                           " when value plain number"),
-        REGISTER_TEST_CASE(yajp_parse_short_test_real_number, 7, yajp_parse_short, " when value real number"),
-        REGISTER_TEST_CASE(yajp_parse_short_test_number_less_than_short_min, 8, yajp_parse_short,
-                           " when value is less than SHRT_MIN"),
-        REGISTER_TEST_CASE(yajp_parse_short_test_number_greater_than_short_max, 9, yajp_parse_short,
-                           " when value is greater than SHRT_MAX"),
+        REGISTER_TEST_CASE(yajp_parse_short_test_null, 1, yajp_parse_short, "when value is NULL"),
+        REGISTER_TEST_CASE(yajp_parse_short_test_empty_string, 2, yajp_parse_short, "when value is empty string"),
+        REGISTER_TEST_CASE(yajp_parse_short_test_invalid_string, 3, yajp_parse_short, "when value is invalid string"),
+        REGISTER_TEST_CASE(yajp_parse_short_test_number_with_leading_plus, 4, yajp_parse_short, "when value have leading plus"),
+        REGISTER_TEST_CASE(yajp_parse_short_test_number_with_leading_minus, 5, yajp_parse_short, "when value have leading minus"),
+        REGISTER_TEST_CASE(yajp_parse_short_test_number_without_leading_sign, 6, yajp_parse_short,"when value plain number"),
+        REGISTER_TEST_CASE(yajp_parse_short_test_real_number, 7, yajp_parse_short, "when value real number"),
+        REGISTER_TEST_CASE(yajp_parse_short_test_number_less_than_short_min, 8, yajp_parse_short, "when value is less than SHRT_MIN"),
+        REGISTER_TEST_CASE(yajp_parse_short_test_number_greater_than_short_max, 9, yajp_parse_short, "when value is greater than SHRT_MAX"),
 
-        REGISTER_TEST_CASE(yajp_parse_int_test_null, 1, yajp_parse_int, " when value is NULL"),
-        REGISTER_TEST_CASE(yajp_parse_int_test_empty_string, 2, yajp_parse_int, " when value is empty string"),
-        REGISTER_TEST_CASE(yajp_parse_int_test_invalid_string, 3, yajp_parse_int, " when value is invalid string"),
-        REGISTER_TEST_CASE(yajp_parse_int_test_number_with_leading_plus, 4, yajp_parse_int,
-                           " when value have leading plus"),
-        REGISTER_TEST_CASE(yajp_parse_int_test_number_with_leading_minus, 5, yajp_parse_int,
-                           " when value have leading minus"),
-        REGISTER_TEST_CASE(yajp_parse_int_test_number_without_leading_sign, 6, yajp_parse_int,
-                           " when value plain number"),
-        REGISTER_TEST_CASE(yajp_parse_int_test_real_number, 7, yajp_parse_int, " when value real number"),
-        REGISTER_TEST_CASE(yajp_parse_int_test_number_less_than_int_min, 8, yajp_parse_int,
-                           " when value is less than INT_MIN"),
-        REGISTER_TEST_CASE(yajp_parse_int_test_number_greater_than_int_max, 9, yajp_parse_int,
-                           " when value is greater than INT_MAX"),
+        REGISTER_TEST_CASE(yajp_parse_int_test_null, 1, yajp_parse_int, "when value is NULL"),
+        REGISTER_TEST_CASE(yajp_parse_int_test_empty_string, 2, yajp_parse_int, "when value is empty string"),
+        REGISTER_TEST_CASE(yajp_parse_int_test_invalid_string, 3, yajp_parse_int, "when value is invalid string"),
+        REGISTER_TEST_CASE(yajp_parse_int_test_number_with_leading_plus, 4, yajp_parse_int, "when value have leading plus"),
+        REGISTER_TEST_CASE(yajp_parse_int_test_number_with_leading_minus, 5, yajp_parse_int, "when value have leading minus"),
+        REGISTER_TEST_CASE(yajp_parse_int_test_number_without_leading_sign, 6, yajp_parse_int, "when value plain number"),
+        REGISTER_TEST_CASE(yajp_parse_int_test_real_number, 7, yajp_parse_int, "when value real number"),
+        REGISTER_TEST_CASE(yajp_parse_int_test_number_less_than_int_min, 8, yajp_parse_int, "when value is less than INT_MIN"),
+        REGISTER_TEST_CASE(yajp_parse_int_test_number_greater_than_int_max, 9, yajp_parse_int, "when value is greater than INT_MAX"),
 
-        REGISTER_TEST_CASE(yajp_parse_long_int_test_null, 1, yajp_parse_long_int, " when value is NULL"),
-        REGISTER_TEST_CASE(yajp_parse_long_int_test_empty_string, 2, yajp_parse_long_int,
-                           " when value is empty string"),
-        REGISTER_TEST_CASE(yajp_parse_long_int_test_invalid_string, 3, yajp_parse_long_int,
-                           " when value is invalid string"),
-        REGISTER_TEST_CASE(yajp_parse_long_int_test_number_with_leading_plus, 4, yajp_parse_long_int,
-                           " when value have leading plus"),
-        REGISTER_TEST_CASE(yajp_parse_long_int_test_number_with_leading_minus, 5, yajp_parse_long_int,
-                           " when value have leading minus"),
-        REGISTER_TEST_CASE(yajp_parse_long_int_test_number_without_leading_sign, 6, yajp_parse_long_int,
-                           " when value plain number"),
-        REGISTER_TEST_CASE(yajp_parse_long_int_test_real_number, 7, yajp_parse_long_int, " when value real number"),
-        REGISTER_TEST_CASE(yajp_parse_long_int_test_number_less_than_long_int_min, 8, yajp_parse_long_int,
-                           " when value is less than LINT_MIN"),
-        REGISTER_TEST_CASE(yajp_parse_long_int_test_number_greater_than_long_int_max, 9, yajp_parse_long_int,
-                           " when value is greater than LINT_MAX"),
+        REGISTER_TEST_CASE(yajp_parse_long_int_test_null, 1, yajp_parse_long_int, "when value is NULL"),
+        REGISTER_TEST_CASE(yajp_parse_long_int_test_empty_string, 2, yajp_parse_long_int, "when value is empty string"),
+        REGISTER_TEST_CASE(yajp_parse_long_int_test_invalid_string, 3, yajp_parse_long_int, "when value is invalid string"),
+        REGISTER_TEST_CASE(yajp_parse_long_int_test_number_with_leading_plus, 4, yajp_parse_long_int, "when value have leading plus"),
+        REGISTER_TEST_CASE(yajp_parse_long_int_test_number_with_leading_minus, 5, yajp_parse_long_int, "when value have leading minus"),
+        REGISTER_TEST_CASE(yajp_parse_long_int_test_number_without_leading_sign, 6, yajp_parse_long_int, "when value plain number"),
+        REGISTER_TEST_CASE(yajp_parse_long_int_test_real_number, 7, yajp_parse_long_int, "when value real number"),
+        REGISTER_TEST_CASE(yajp_parse_long_int_test_number_less_than_long_int_min, 8, yajp_parse_long_int, "when value is less than LINT_MIN"),
+        REGISTER_TEST_CASE(yajp_parse_long_int_test_number_greater_than_long_int_max, 9, yajp_parse_long_int, "when value is greater than LINT_MAX"),
 
-        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_null, 1, yajp_parse_long_long_int, " when value is NULL"),
-        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_empty_string, 2, yajp_parse_long_long_int,
-                           " when value is empty string"),
-        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_invalid_string, 3, yajp_parse_long_long_int,
-                           " when value is invalid string"),
-        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_number_with_leading_plus, 4, yajp_parse_long_long_int,
-                           " when value have leading plus"),
-        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_number_with_leading_minus, 5, yajp_parse_long_long_int,
-                           " when value have leading minus"),
-        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_number_without_leading_sign, 6, yajp_parse_long_long_int,
-                           " when value plain number"),
-        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_real_number, 7, yajp_parse_long_long_int,
-                           " when value real number"),
-        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_number_less_than_long_long_int_min, 8,
-                           yajp_parse_long_long_int, " when value is less than LLINT_MIN"),
-        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_number_greater_than_long_long_int_max, 9,
-                           yajp_parse_long_long_int, " when value is greater than LLINT_MAX"),
+        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_null, 1, yajp_parse_long_long_int, "when value is NULL"),
+        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_empty_string, 2, yajp_parse_long_long_int, "when value is empty string"),
+        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_invalid_string, 3, yajp_parse_long_long_int, "when value is invalid string"),
+        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_number_with_leading_plus, 4, yajp_parse_long_long_int, "when value have leading plus"),
+        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_number_with_leading_minus, 5, yajp_parse_long_long_int, "when value have leading minus"),
+        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_number_without_leading_sign, 6, yajp_parse_long_long_int, "when value plain number"),
+        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_real_number, 7, yajp_parse_long_long_int, "when value real number"),
+        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_number_less_than_long_long_int_min, 8, yajp_parse_long_long_int, "when value is less than LLINT_MIN"),
+        REGISTER_TEST_CASE(yajp_parse_long_long_int_test_number_greater_than_long_long_int_max, 9, yajp_parse_long_long_int, "when value is greater than LLINT_MAX"),
 
-        REGISTER_TEST_CASE(yajp_parse_bool_test_null, 1, yajp_parse_short, " when value is NULL"),
-        REGISTER_TEST_CASE(yajp_parse_bool_test_empty_string, 2, yajp_parse_short, " when value is empty string"),
-        REGISTER_TEST_CASE(yajp_parse_bool_test_true, 3, yajp_parse_short, " when value is 'true'"),
-        REGISTER_TEST_CASE(yajp_parse_bool_test_false, 4, yajp_parse_short, " when value is 'false'"),
-        REGISTER_TEST_CASE(yajp_parse_bool_test_invalid_string, 5, yajp_parse_short, " when value is invalid string"),
-        REGISTER_TEST_CASE(yajp_parse_bool_test_valid_in_content_but_invalid_as_value, 6, yajp_parse_short,
-                           " when value have valid content but not valid as expected value, i.e. 'tRUe'"),
+        REGISTER_TEST_CASE(yajp_parse_bool_test_null, 1, yajp_parse_short, "when value is NULL"),
+        REGISTER_TEST_CASE(yajp_parse_bool_test_empty_string, 2, yajp_parse_short, "when value is empty string"),
+        REGISTER_TEST_CASE(yajp_parse_bool_test_true, 3, yajp_parse_short, "when value is 'true'"),
+        REGISTER_TEST_CASE(yajp_parse_bool_test_false, 4, yajp_parse_short, "when value is 'false'"),
+        REGISTER_TEST_CASE(yajp_parse_bool_test_invalid_string, 5, yajp_parse_short, "when value is invalid string"),
+        REGISTER_TEST_CASE(yajp_parse_bool_test_valid_in_content_but_invalid_as_value, 6, yajp_parse_short, "when value have valid content but not valid as expected value, i.e. 'tRUe'"),
 };
 
 /* test suite tests count declaration and initialization */

@@ -37,143 +37,46 @@ static test_result_t yajp_lexer_init_input_test_stream_equal(int argc, char **ar
 
 static test_result_t yajp_lexer_release_input_test(int argc, char **argv);
 
-static test_result_t test_yajp_lexer_pick_token_primitive_token(int argc, char **argv);
-static test_result_t test_yajp_lexer_pick_token_extended_number(int argc, char **argv);
-static test_result_t test_yajp_lexer_pick_token_extended_bool(int argc, char **argv);
-static test_result_t test_yajp_lexer_pick_token_extended_small_string(int argc, char **argv);
-static test_result_t test_yajp_lexer_pick_token_extended_large_string(int argc, char **argv);
+static test_result_t yajp_lexer_pick_token_test_primitive_token(int argc, char **argv);
+static test_result_t yajp_lexer_pick_token_test_extended_number(int argc, char **argv);
+static test_result_t yajp_lexer_pick_token_test_extended_bool(int argc, char **argv);
+static test_result_t yajp_lexer_pick_token_test_extended_small_string(int argc, char **argv);
+static test_result_t yajp_lexer_pick_token_test_extended_large_string(int argc, char **argv);
 
-static test_result_t test_yajp_lexer_release_token_primitive(int argc, char **argv);
-static test_result_t test_yajp_lexer_release_token_extended_small(int argc, char **argv);
-static test_result_t test_yajp_lexer_release_token_extended_big(int argc, char **argv);
+static test_result_t yajp_lexer_release_token_test_primitive(int argc, char **argv);
+static test_result_t yajp_lexer_release_token_test_extended_small(int argc, char **argv);
+static test_result_t yajp_lexer_release_token_test_extended_big(int argc, char **argv);
 
-static test_result_t test_yajp_lexer_fill_input_no_realloc(int argc, char **argv);
-static test_result_t test_yajp_lexer_fill_input_need_realloc(int argc, char **argv);
-static test_result_t test_yajp_lexer_fill_input_need_huge_realloc(int argc, char **argv);
+static test_result_t yajp_lexer_fill_input_test_no_realloc(int argc, char **argv);
+static test_result_t yajp_lexer_fill_input_test_need_realloc(int argc, char **argv);
+static test_result_t yajp_lexer_fill_input_test_need_huge_realloc(int argc, char **argv);
 
-static test_result_t test_lexer_complex_json(int argc, char **argv);
+static test_result_t yajp_lexer_get_next_token_test(int argc, char **argv);
 
 /* test suite declaration and initialization */
 const test_case_t test_suite[] = {
-        {
-                .method = yajp_lexer_init_input_test_empty_stream,
-                .name = FUNC_NAME(yajp_lexer_init_input)" test 1",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_init_input) " when stream is empty",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = yajp_lexer_init_input_test_stream_small,
-                .name = FUNC_NAME(yajp_lexer_init_input)" test 2",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_init_input) " when stream is less than YAJP_BUFFER_SIZE",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = yajp_lexer_init_input_test_stream_big,
-                .name = FUNC_NAME(yajp_lexer_init_input)" test 3",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_init_input) " when stream is greater than YAJP_BUFFER_SIZE",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = yajp_lexer_init_input_test_stream_equal,
-                .name = FUNC_NAME(yajp_lexer_init_input)" test 4",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_init_input) " when stream is equal YAJP_BUFFER_SIZE",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-            .method = yajp_lexer_release_input_test,
-            .name = FUNC_NAME(yajp_lexer_release_input)" test 1",
-            .description = "Test execution of " FUNC_NAME(yajp_lexer_release_input),
-            .argc = 0,
-            .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_pick_token_primitive_token,
-                .name = FUNC_NAME(yajp_lexer_pick_token)" test 1",
-                .description = "Test execution of "FUNC_NAME(yajp_lexer_pick_token)" with primitive tokens",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_pick_token_extended_number,
-                .name = FUNC_NAME(yajp_lexer_pick_token)" test 2",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_pick_token)" with extended number token",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_pick_token_extended_bool,
-                .name = FUNC_NAME(yajp_lexer_pick_token)" test 3",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_pick_token)" with extended boolean token",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_pick_token_extended_small_string,
-                .name = FUNC_NAME(yajp_lexer_pick_token)" test 4",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_pick_token)" with extended string token with value size less than YAJP_BUFFER_SIZE. Size of input buffer should be YAJP_BUFFER_SIZE",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_pick_token_extended_large_string,
-                .name = FUNC_NAME(yajp_lexer_pick_token)" test 5",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_pick_token)" with extended string token with value size greater than YAJP_BUFFER_SIZE should multiplies by YAJP_BUFFER_SIZE",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_release_token_primitive,
-                .name = FUNC_NAME(yajp_lexer_release_token)" test 1",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_release_token)" on releasing primitive tokens",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_release_token_extended_small,
-                .name = FUNC_NAME(yajp_lexer_release_token)" test 2",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_release_token)" on releasing extended tokens tokens what fits inside internal buffer",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_release_token_extended_big,
-                .name = FUNC_NAME(yajp_lexer_release_token)" test 3",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_release_token)" on releasing extended tokens tokens what doesn't fits inside internal buffer",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_fill_input_no_realloc,
-                .name = FUNC_NAME(yajp_lexer_fill_input)" test 1",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_fill_input)" when no reallocation of internal buffer needed",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_fill_input_need_realloc,
-                .name = FUNC_NAME(yajp_lexer_fill_input)" test 2",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_fill_input)" when reallocation of internal buffer needed",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-                .method = test_yajp_lexer_fill_input_need_huge_realloc,
-                .name = FUNC_NAME(yajp_lexer_fill_input)" test 3",
-                .description = "Test execution of " FUNC_NAME(yajp_lexer_fill_input)" when big reallocation of internal buffer needed",
-                .argc = 0,
-                .argv = NULL
-        },
-        {
-            .method = test_lexer_complex_json,
-            .name = "Lexer full test",
-            .description = "Test token recognition with real JSON",
-            .argc = 0,
-            .argv = NULL,
-        }
+        REGISTER_TEST_CASE(yajp_lexer_init_input_test_empty_stream, 1, yajp_lexer_init_input, "when stream is empty"),
+        REGISTER_TEST_CASE(yajp_lexer_init_input_test_stream_small, 2, yajp_lexer_init_input, "when stream is less than YAJP_BUFFER_SIZE"),
+        REGISTER_TEST_CASE(yajp_lexer_init_input_test_stream_big, 3, yajp_lexer_init_input, "when stream is greater than YAJP_BUFFER_SIZE"),
+        REGISTER_TEST_CASE(yajp_lexer_init_input_test_stream_equal, 4, yajp_lexer_init_input, "when stream is equal YAJP_BUFFER_SIZE"),
+
+        REGISTER_TEST_CASE(yajp_lexer_release_input_test, 1, yajp_lexer_release_input, ""),
+
+        REGISTER_TEST_CASE(yajp_lexer_pick_token_test_primitive_token, 1, yajp_lexer_pick_token, "with primitive tokens"),
+        REGISTER_TEST_CASE(yajp_lexer_pick_token_test_extended_number, 2, yajp_lexer_pick_token, "with extended number token"),
+        REGISTER_TEST_CASE(yajp_lexer_pick_token_test_extended_bool, 3, yajp_lexer_pick_token, "with extended boolean token"),
+        REGISTER_TEST_CASE(yajp_lexer_pick_token_test_extended_small_string, 4, yajp_lexer_pick_token, "with extended string token with value size less than YAJP_BUFFER_SIZE. Size of input buffer should be YAJP_BUFFER_SIZE"),
+        REGISTER_TEST_CASE(yajp_lexer_pick_token_test_extended_large_string, 5, yajp_lexer_pick_token, "with extended string token with value size greater than YAJP_BUFFER_SIZE should multiplies by YAJP_BUFFER_SIZE"),
+
+        REGISTER_TEST_CASE(yajp_lexer_release_token_test_primitive, 1, yajp_lexer_release_token, "on releasing primitive tokens"),
+        REGISTER_TEST_CASE(yajp_lexer_release_token_test_extended_small, 2, yajp_lexer_release_token, "on releasing extended tokens tokens what fits inside internal buffer"),
+        REGISTER_TEST_CASE(yajp_lexer_release_token_test_extended_big, 3, yajp_lexer_release_token, "on releasing extended tokens tokens what doesn't fits inside internal buffer"),
+
+        REGISTER_TEST_CASE(yajp_lexer_fill_input_test_no_realloc, 1, yajp_lexer_fill_input, "when no reallocation of internal buffer needed"),
+        REGISTER_TEST_CASE(yajp_lexer_fill_input_test_need_realloc, 2, yajp_lexer_fill_input, "when reallocation of internal buffer needed"),
+        REGISTER_TEST_CASE(yajp_lexer_fill_input_test_need_huge_realloc, 3, yajp_lexer_fill_input, "when big reallocation of internal buffer needed"),
+
+        REGISTER_TEST_CASE(yajp_lexer_get_next_token_test, 3, yajp_lexer_get_next_token, "Full lexer test: token recognition with real JSON"),
 };
 /* test suite tests count declaration and initialization */
 const long test_count = sizeof(test_suite) / sizeof(test_suite[0]);
@@ -436,7 +339,7 @@ static test_result_t yajp_lexer_release_input_test(UNUSED int argc, UNUSED char 
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t test_yajp_lexer_pick_token_primitive_token(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_pick_token_test_primitive_token(UNUSED int argc, UNUSED char **argv) {
     uint8_t js[] = "{[]},:null";
     yajp_lexer_token_t picked_token;
     const size_t zero_block_size = YAJP_BUFFER_SIZE / sizeof(uint8_t);
@@ -514,7 +417,7 @@ static test_result_t test_yajp_lexer_pick_token_primitive_token(UNUSED int argc,
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t test_yajp_lexer_pick_token_extended_number(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_pick_token_test_extended_number(UNUSED int argc, UNUSED char **argv) {
     uint8_t js[] = "+13332.122e-23";
 
     yajp_lexer_input_t intput = {
@@ -550,7 +453,7 @@ static test_result_t test_yajp_lexer_pick_token_extended_number(UNUSED int argc,
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t test_yajp_lexer_pick_token_extended_bool(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_pick_token_test_extended_bool(UNUSED int argc, UNUSED char **argv) {
     uint8_t js[] = "true";
 
     yajp_lexer_input_t input = {
@@ -586,7 +489,7 @@ static test_result_t test_yajp_lexer_pick_token_extended_bool(UNUSED int argc, U
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t test_yajp_lexer_pick_token_extended_small_string(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_pick_token_test_extended_small_string(UNUSED int argc, UNUSED char **argv) {
     const size_t js_siz = YAJP_BUFFER_SIZE;
     uint8_t *js = malloc(js_siz);
     yajp_lexer_input_t input = {
@@ -624,7 +527,7 @@ static test_result_t test_yajp_lexer_pick_token_extended_small_string(UNUSED int
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t test_yajp_lexer_pick_token_extended_large_string(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_pick_token_test_extended_large_string(UNUSED int argc, UNUSED char **argv) {
     const size_t js_siz = 2 * YAJP_BUFFER_SIZE;
     uint8_t *js = malloc(js_siz);
     yajp_lexer_input_t input = {
@@ -662,7 +565,7 @@ static test_result_t test_yajp_lexer_pick_token_extended_large_string(UNUSED int
 }
 
 
-static test_result_t test_yajp_lexer_release_token_primitive(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_release_token_test_primitive(UNUSED int argc, UNUSED char **argv) {
     uint8_t js[] = "null";
     yajp_lexer_input_t input = {
             .buffer = js,
@@ -687,7 +590,7 @@ static test_result_t test_yajp_lexer_release_token_primitive(UNUSED int argc, UN
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t test_yajp_lexer_release_token_extended_small(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_release_token_test_extended_small(UNUSED int argc, UNUSED char **argv) {
     uint8_t js[] = "1234";
     yajp_lexer_input_t input = {
             .buffer = js,
@@ -712,7 +615,7 @@ static test_result_t test_yajp_lexer_release_token_extended_small(UNUSED int arg
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t test_yajp_lexer_release_token_extended_big(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_release_token_test_extended_big(UNUSED int argc, UNUSED char **argv) {
     const size_t js_siz = 2 * YAJP_BUFFER_SIZE;
     uint8_t *js = malloc(js_siz);
     yajp_lexer_input_t input = {
@@ -750,17 +653,17 @@ static test_result_t test_yajp_lexer_release_token_extended_big(UNUSED int argc,
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t test_yajp_lexer_fill_input_no_realloc(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_fill_input_test_no_realloc(UNUSED int argc, UNUSED char **argv) {
     // todo: implement
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t test_yajp_lexer_fill_input_need_realloc(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_fill_input_test_need_realloc(UNUSED int argc, UNUSED char **argv) {
     // todo: implement
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t test_yajp_lexer_fill_input_need_huge_realloc(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_fill_input_test_need_huge_realloc(UNUSED int argc, UNUSED char **argv) {
     // todo: implement
     return TEST_RESULT_PASSED;
 }
@@ -963,7 +866,6 @@ static const token_checker_t tokens_checkers[] = {
         token_string("cofaxAdmin"), token_collon(), token_string("/admin/*"), token_comma(),
         token_string("fileServlet"), token_collon(), token_string("/static/*"), token_comma(),
         token_string("cofaxTools"), token_collon(), token_string("/tools/*"), token_oend(), token_comma(),
-
         token_string("taglib"), token_collon(), token_obegin(),
         token_string("utf_8_2bytes"), token_collon(), token_string("какие-то слова"), token_comma(),
         token_string("taglib-uri"), token_collon(), token_string("cofax.tld"), token_comma(),
@@ -973,7 +875,7 @@ static const token_checker_t tokens_checkers[] = {
 static const size_t a = sizeof(tokens_checkers);
 static const int tokens_checkers_count = ARR_LEN(tokens_checkers);
 
-static test_result_t test_lexer_complex_json(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_get_next_token_test(UNUSED int argc, UNUSED char **argv) {
 
 
     FILE *stream;
@@ -982,7 +884,7 @@ static test_result_t test_lexer_complex_json(UNUSED int argc, UNUSED char **argv
     const token_checker_t *checker;
     int ret, i;
 
-    ret = create_and_test_stream(json, json_size, FUNC_NAME(test_lexer_complex_json), &stream);
+    ret = create_and_test_stream(json, json_size, FUNC_NAME(yajp_lexer_get_next_token_test), &stream);
     if (TEST_RESULT_PASSED != ret) {
         return ret;
     }
@@ -1017,6 +919,7 @@ static test_result_t test_lexer_complex_json(UNUSED int argc, UNUSED char **argv
         }
 
 #ifdef YAJP_TRACK_STREAM
+        // TODO: implement
 #endif
 
         yajp_lexer_release_token(&token);
