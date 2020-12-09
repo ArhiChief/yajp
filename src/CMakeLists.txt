@@ -59,3 +59,8 @@ target_include_directories(yajp_lib
             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         )
+
+target_compile_definitions(yajp_lib
+        PRIVATE $<$<CONFIG:Debug>:DEBUG>
+        PUBLIC YAJP_BUFFER_SIZE=${YAJP_BUFFER_SIZE} $<$<BOOL:YAJP_TRACK_STREAM>:YAJP_TRACK_STREAM>
+        )

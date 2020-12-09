@@ -20,7 +20,6 @@
 
 #include "test_common.h"
 
-#include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
 

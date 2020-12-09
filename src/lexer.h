@@ -32,12 +32,13 @@
 #   define YAJP_TRACK_STREAM
 #endif
 
-#if !defined(YAJP_BUFFER_SIZE) || YAJP_BUFFER_SIZE < 32
 /**
  * Size of buffers in bytes
  */
+#if !defined(YAJP_BUFFER_SIZE) || YAJP_BUFFER_SIZE < 32
 #   define YAJP_BUFFER_SIZE    32
 #endif
+
 
 /**
  *  Represent recognized token picked from stream

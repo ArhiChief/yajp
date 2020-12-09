@@ -23,14 +23,10 @@
 #define YAJP_PARSER_H
 
 #include "token_type.h"
-#include "lexer.h"
 
-/**
- * \struct yajp_deser_ctx_t
- */
-typedef struct {
-
-} yajp_deser_ctx_t;
+#ifndef DEBUG
+#define NDEBUG
+#endif
 
 #ifndef NDEBUG
 /**
@@ -46,6 +42,20 @@ typedef struct {
  */
 void yajp_parser_trace(FILE *TraceFILE, char *zTracePrompt);
 #endif
+
+/**
+ * Recognized parser actions. Retur
+ */
+typedef enum yajp_parser_recognized_action {
+    YAJP_PARSER_RECOGNIZED_ACTION_NONE          = 0,
+    YAJP_PARSER_RECOGNIZED_ACTION_KEY           = 1,
+    YAJP_PARSER_RECOGNIZED_ACTION_VALUE         = 2,
+    YAJP_PARSER_RECOGNIZED_ACTION_ARRAY_BEGIN   = 3,
+    YAJP_PARSER_RECOGNIZED_ACTION_ARRAY_END     = 4,
+    YAJP_PARSER_RECOGNIZED_ACTION_ARRAY_ITEM    = 5,
+    YAJP_PARSER_RECOGNIZED_OBJECT_BEGIN         = 6,
+    YAJP_PARSER_RECOGNIZED_OBJECT_END           = 7
+} yajp_parser_recognized_action_t;
 
 /**
  * \brief   Initialize a new parser that has already been allocated
@@ -73,20 +83,20 @@ void yajp_parser_finalize(void *yyp);
  *
  * \brief Deallocate and destroy a parser
  *
- * \param[in]   yyp         The parser to be deleted
+ * \param[in]   yyp         The parser to be released
  * \param[in]   freeProc    Function used to reclaim memory
  */
-void yajp_parser_release(void *yyp, void (*freeProc)(void*));
+void yajp_parser_release(void *yyp, void (*freeProc)(void *));
 
 /**
  * \brief
  *
  * \param[in]   yyp         The parser
  * \param[in]   yymajor     The major token code number
- * \param[in]   yyminor     The value for the token
- * \param[in]   ctx         The deserialization context
+ * \param       yyminor     The value for the token. Not used
+ * \param[out]  action      Recognized action. If value is YAJP_PARSER_RECOGNIZED_ACTION_NONE more tokens required
  */
-void yajp_parser_parse(void *yyp, int yymajor, const yajp_lexer_token_t *yyminor, yajp_deser_ctx_t *ctx);
+void yajp_parser_parse(void *yyp, int yymajor, int yyminor, yajp_parser_recognized_action_t *action);
 
 /**
  * \brief   Return the fallback token corresponding to canonical token

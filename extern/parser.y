@@ -12,10 +12,10 @@
 }
 
 // type of token
-%token_type { const yajp_lexer_token_t * }
+%token_type { int }
 
 // fourth argument for yajp_parser_parse function
-%extra_argument { yajp_deser_ctx_t *ctx }
+%extra_argument { yajp_parser_recognized_action_t *action }
 
 /*
  * Grammar based on https://web.cs.dal.ca/~sjackson/bitJson/JSON.html with
@@ -38,7 +38,7 @@ obj_content ::= obj_content pair.
 
 pair        ::= key value.
 
-key         ::= STRING(A) COLON.    { /*yajp_parser_set_action(ctx, A->attrs.val, A->attrs.val_size);*/ }
+key         ::= STRING COLON.    {  }
 
 arr         ::= ABEGIN arr_content AEND.
 arr         ::= ABEGIN AEND.
@@ -50,7 +50,7 @@ arr_content ::= arr_content value.
 
 value       ::= obj.
 value       ::= arr.
-value       ::= STRING(A).          { /*yajp_parser_try_set_value(ctx, A);*/ }
-value       ::= BOOLEAN(A).         { /*yajp_parser_try_set_value(ctx, A);*/ }
-value       ::= NUMBER(A).          { /*yajp_parser_try_set_value(ctx, A);*/ }
-value       ::= NULL(A).            { /*yajp_parser_try_set_value(ctx, A);*/ }
+value       ::= STRING.          {  }
+value       ::= BOOLEAN.         {  }
+value       ::= NUMBER.          {  }
+value       ::= NULL.            {  }
