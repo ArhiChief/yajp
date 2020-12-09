@@ -22,6 +22,7 @@
 #include "yajp/deserialization.h"
 #include "lexer.h"
 #include "token_type.h"
+#include "deserialization_misc.h"
 
 /* prototypes */
 static int yajp_deserialize(yajp_lexer_input_t *, const yajp_deserialization_ctx_t *, void *, void *);
@@ -73,7 +74,6 @@ yajp_deserialize(yajp_lexer_input_t *input, const yajp_deserialization_ctx_t *ct
         }
 
         token_type = token.token;
-
 
         yajp_lexer_release_token(&token);
 

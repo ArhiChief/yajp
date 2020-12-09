@@ -33,9 +33,46 @@ typedef int (*yajp_value_setter_t)(const char *name,
                                    void *user_data
 );
 
-typedef struct yajp_deserialization_ctx {
-   int a;       /**< pepper */
-} yajp_deserialization_ctx_t;
+typedef enum {
+    YAJP_DESERIALIZATION_ACTION_TYPE_FIELD
+} yajp_deserialization_action_type_t;
+
+struct yajp_deserialization_ctx;
+struct yajp_deserialization_action;
+
+typedef struct yajp_deserialization_ctx yajp_deserialization_ctx_t;
+typedef struct yajp_deserialization_action yajp_deserialization_action_t;
+
+struct yajp_deserialization_ctx {
+   int actions_cnt;
+   yajp_deserialization_action_t *actions;
+};
+
+struct yajp_deserialization_action {
+    size_t offset;
+    size_t size;
+    yajp_deserialization_action_type_t type;
+
+    unsigned long field_key;
+
+    union {
+        yajp_value_setter_t setter;
+    };
+};
+
+
+int yajp_deserialization_action_init(const char *field_name, size_t name_size, size_t offset, size_t field_size,
+                                     yajp_deserialization_action_type_t action_type, yajp_value_setter_t setter,
+                                     yajp_deserialization_action_t *result);
+
+/**
+ *
+ * @param acts
+ * @param count
+ * @param ctx
+ * @return
+ */
+int yajp_deserialization_ctx_init(yajp_deserialization_action_t *acts, int count, yajp_deserialization_ctx_t *ctx);
 
 /**
  *

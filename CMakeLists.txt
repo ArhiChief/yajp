@@ -19,5 +19,3 @@ set(YAJP_BUFFER_SIZE 32 CACHE STRING "Lexer buffer size and growing factor. Defa
 
 add_subdirectory(src)
 add_subdirectory(tests)
-
-
