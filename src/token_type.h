@@ -29,9 +29,9 @@ typedef enum {
     YAJP_TOKEN_EOF      = 0, /* End of file token type */
     YAJP_TOKEN_OBEGIN   = 1, /* Object begin token type ({) */
     YAJP_TOKEN_OEND     = 2, /* Object end token type (}) */
-    YAJP_TOKEN_STRING   = 3, /* String token type ("hello world") */
-    YAJP_TOKEN_COLON    = 4, /* Pair separator token type (:) */
-    YAJP_TOKEN_COMMA    = 5, /* Elements separator token type (,) */
+    YAJP_TOKEN_STRING   = 4, /* String token type ("hello world") */
+    YAJP_TOKEN_COLON    = 5, /* Pair separator token type (:) */
+    YAJP_TOKEN_COMMA    = 3, /* Elements separator token type (,) */
     YAJP_TOKEN_ABEGIN   = 6, /* Array begin token type ([) */
     YAJP_TOKEN_AEND     = 7, /* Array end token type (]) */
     YAJP_TOKEN_BOOLEAN  = 8, /* Boolean token type (true || false) */

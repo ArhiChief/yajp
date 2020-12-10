@@ -9,10 +9,11 @@
     #include <assert.h>
     #include <stdlib.h>
     #include "parser.h"
+    #include "lexer.h"
 }
 
 // type of token
-%token_type { int }
+%token_type { const yajp_lexer_token_t * }
 
 // fourth argument for yajp_parser_parse function
 %extra_argument { yajp_parser_recognized_action_t *action }
@@ -36,9 +37,7 @@ obj_content ::= pair.
 obj_content ::= obj_content COMMA.
 obj_content ::= obj_content pair.
 
-pair        ::= key value.
-
-key         ::= STRING COLON.    {  }
+pair        ::= STRING(A) COLON value(B).	{ action->field = A; action->value = B; action->is_recognized = true; }
 
 arr         ::= ABEGIN arr_content AEND.
 arr         ::= ABEGIN AEND.

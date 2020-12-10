@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-typedef int (*yajp_value_setter_t)(const char *name,
+typedef int (*yajp_value_setter_t)(const uint8_t *name,
                                    size_t name_size,
                                    const uint8_t *value,
                                    size_t value_size,

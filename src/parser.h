@@ -22,7 +22,7 @@
 #ifndef YAJP_PARSER_H
 #define YAJP_PARSER_H
 
-#include "token_type.h"
+#include "lexer.h"
 
 #ifndef DEBUG
 #define NDEBUG
@@ -46,15 +46,10 @@ void yajp_parser_trace(FILE *TraceFILE, char *zTracePrompt);
 /**
  * Recognized parser actions. Retur
  */
-typedef enum yajp_parser_recognized_action {
-    YAJP_PARSER_RECOGNIZED_ACTION_NONE          = 0,
-    YAJP_PARSER_RECOGNIZED_ACTION_KEY           = 1,
-    YAJP_PARSER_RECOGNIZED_ACTION_VALUE         = 2,
-    YAJP_PARSER_RECOGNIZED_ACTION_ARRAY_BEGIN   = 3,
-    YAJP_PARSER_RECOGNIZED_ACTION_ARRAY_END     = 4,
-    YAJP_PARSER_RECOGNIZED_ACTION_ARRAY_ITEM    = 5,
-    YAJP_PARSER_RECOGNIZED_OBJECT_BEGIN         = 6,
-    YAJP_PARSER_RECOGNIZED_OBJECT_END           = 7
+typedef struct {
+    bool is_recognized;
+    const yajp_lexer_token_t *field;
+    const yajp_lexer_token_t *value;
 } yajp_parser_recognized_action_t;
 
 /**
@@ -93,10 +88,10 @@ void yajp_parser_release(void *yyp, void (*freeProc)(void *));
  *
  * \param[in]   yyp         The parser
  * \param[in]   yymajor     The major token code number
- * \param       yyminor     The value for the token. Not used
+ * \param       yyminor     The value for the token.
  * \param[out]  action      Recognized action. If value is YAJP_PARSER_RECOGNIZED_ACTION_NONE more tokens required
  */
-void yajp_parser_parse(void *yyp, int yymajor, int yyminor, yajp_parser_recognized_action_t *action);
+void yajp_parser_parse(void *yyp, int yymajor, const yajp_lexer_token_t *yyminor, yajp_parser_recognized_action_t *action);
 
 /**
  * \brief   Return the fallback token corresponding to canonical token

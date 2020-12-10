@@ -26,7 +26,7 @@
 
 #include "yajp/deserialization_routine.h"
 
-int yajp_parse_short(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
+int yajp_parse_short(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
                      void *user_data) {
     uint8_t *pend;
     long result;
@@ -57,7 +57,7 @@ int yajp_parse_short(const char *name, size_t name_size, const uint8_t *value, s
     return -1;
 }
 
-int yajp_parse_int(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
+int yajp_parse_int(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
                    void *user_data) {
 
     uint8_t *pend;
@@ -89,7 +89,7 @@ int yajp_parse_int(const char *name, size_t name_size, const uint8_t *value, siz
     return -1;
 }
 
-int yajp_parse_long_int(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
+int yajp_parse_long_int(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
                         void *user_data) {
 
     uint8_t *pend;
@@ -121,7 +121,7 @@ int yajp_parse_long_int(const char *name, size_t name_size, const uint8_t *value
     return -1;
 }
 
-int yajp_parse_long_long_int(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
+int yajp_parse_long_long_int(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
                              void *user_data) {
 
     uint8_t *pend;
@@ -149,7 +149,7 @@ int yajp_parse_long_long_int(const char *name, size_t name_size, const uint8_t *
     return -1;
 }
 
-int yajp_parse_float(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
+int yajp_parse_float(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
                      void *user_data) {
 
     uint8_t *pend;
@@ -177,7 +177,7 @@ int yajp_parse_float(const char *name, size_t name_size, const uint8_t *value, s
     return -1;
 }
 
-int yajp_parse_double(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
+int yajp_parse_double(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
                       void *user_data) {
 
     uint8_t *pend;
@@ -205,7 +205,7 @@ int yajp_parse_double(const char *name, size_t name_size, const uint8_t *value, 
     return -1;
 }
 
-int yajp_parse_long_double(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
+int yajp_parse_long_double(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
                            void *user_data) {
 
     uint8_t *pend;
@@ -234,7 +234,7 @@ int yajp_parse_long_double(const char *name, size_t name_size, const uint8_t *va
 }
 
 
-int yajp_parse_bool(const char *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
+int yajp_parse_bool(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
                     void *user_data) {
 
     bool result;
