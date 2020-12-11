@@ -40,7 +40,7 @@ else ()
     set(YAJP_PARSER "${CMAKE_CURRENT_SOURCE_DIR}/parser.c")
 endif ()
 
-set(YAJP_LIB_SOURCES
+list(APPEND YAJP_LIB_SOURCES
         deserialization.c
         lexer_misc.c
         deserialization_routine.c
@@ -49,19 +49,44 @@ set(YAJP_LIB_SOURCES
         ${YAJP_PARSER}
         )
 
-add_library(yajp_lib "${YAJP_LIB_SOURCES}")
+add_library(yajp_lib ${YAJP_LIB_SOURCES})
 add_library(yajp::lib ALIAS yajp_lib)
 
-set_target_properties(yajp_lib PROPERTIES OUTPUT_NAME yajp)
+set_target_properties(yajp_lib
+        PROPERTIES
+            OUTPUT_NAME yajp
+            PUBLIC_HEADER "${YAJP_PUBLIC_HEADERS}"
+        )
 
 target_include_directories(yajp_lib
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
         PUBLIC
             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         )
 
 target_compile_definitions(yajp_lib
-        PRIVATE $<$<CONFIG:Debug>:DEBUG>
-        PUBLIC YAJP_BUFFER_SIZE=${YAJP_BUFFER_SIZE} $<$<BOOL:YAJP_TRACK_STREAM>:YAJP_TRACK_STREAM>
+        PRIVATE
+            $<$<CONFIG:Debug>:DEBUG>
+            YAJP_BUFFER_SIZE=${YAJP_BUFFER_SIZE}
+        PUBLIC
+            $<$<BOOL:${YAJP_TRACK_STREAM}>:YAJP_TRACK_STREAM>
+        )
+
+#install rules
+list(APPEND YAJP_PUBLIC_HEADERS
+        ${PROJECT_SOURCE_DIR}/include/yajp/deserialization.h
+        ${PROJECT_SOURCE_DIR}/include/yajp/deserialization_routine.h
+        )
+
+install(TARGETS yajp_lib
+        ARCHIVE
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/yajp
+        INCLUDES
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/yajp
         )

@@ -24,13 +24,21 @@ To generate documentations you will also need:
 - `doxygen>=1.8.13`
 
 ### Building
+Navigate to directory with **YAJP** sources and execute:
 
+```shell
+cmake -S . -B ./yajp-cmake-build
+cmake --build ./yajp-cmake-build
+```
 ### Installing
+```shell
+cmake --install ./yajp-cmake-build
+```
 
 ### Building documentation
+TBD
 
 ### CMake options
-
 
 | Variable               | Type   | Default value  | Description                                                                                                                                                                              |
 |------------------------|--------|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -40,12 +48,7 @@ To generate documentations you will also need:
 | YAJP_BUFFER_SIZE       | STRING | 32             | Size in bytes of buffers used to work with JSON. If value can't be fitted into buffer it will be extended enough to handle value and size will be multiplicable by **YAJP_BUFFER_SIZE**. | 
 
 ## Usage
-
-
-### Deserialization example
-For now, support is very limited and can handle only deserialization of plain object data structures. Here how it can be
-done:
-
+To use library with your CMake project just add next lines to `CMakeLists.txt`:
 ```cmake
 find_package(yajp REQUIRED)
 
@@ -53,6 +56,10 @@ add_executable(main main.c)
 
 target_link_libraries(main PRIVATE yajp::lib)
 ```
+
+### Deserialization example
+For now, support is very limited and can handle only deserialization of plain object data structures. Here how it can be
+done:
 
 ```c
 #include <yajp/deserialization.h>
