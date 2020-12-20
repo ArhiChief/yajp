@@ -1,7 +1,7 @@
 add_executable(parser_tests parser_tests.c)
 
 target_link_libraries(parser_tests
-        PRIVATE yajp::test_common yajp::lib)
+        PRIVATE yajp::test_common yajp::yajp_lib)
 
 target_include_directories(parser_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
 

@@ -1,0 +1,3 @@
+set(YAJP_TRACK_STREAM @YAJP_TRACK_STREAM@)
+
+include("${CMAKE_CURRENT_LIST_DIR}/YAJPTargets.cmake")

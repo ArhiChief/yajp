@@ -16,6 +16,10 @@ option(YAJP_GENERATE_PARSER "Generate parser using extern/parser.y and extern/pa
 option(YAJP_TRACK_STREAM "Force lexer to track scanned symbols. If parsing fails, error will contain line and column of bad token" OFF)
 set(YAJP_BUFFER_SIZE 32 CACHE STRING "Lexer buffer size and growing factor. Default and minimum value is 32 bytes")
 
+if (NOT (${YAJP_BUFFER_SIZE} MATCHES "[1-9][0-9]?"))
+message(FATAL_ERROR "YAJP_BUFFER_SIZE should be integer greater than 0")
+endif()
+
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
     set(CMAKE_C_STANDARD 11)
@@ -37,7 +41,7 @@ endif ()
 
 add_subdirectory(src)
 
-if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR YAJP_BUILD_TESTING) AND BUILD_TESTING)
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR YAJP_BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests)
 endif ()

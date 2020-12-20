@@ -50,7 +50,7 @@ list(APPEND YAJP_LIB_SOURCES
         )
 
 add_library(yajp_lib ${YAJP_LIB_SOURCES})
-add_library(yajp::lib ALIAS yajp_lib)
+add_library(yajp::yajp_lib ALIAS yajp_lib)
 
 set_target_properties(yajp_lib
         PROPERTIES
@@ -81,6 +81,7 @@ list(APPEND YAJP_PUBLIC_HEADERS
         )
 
 install(TARGETS yajp_lib
+        EXPORT YAJPTargets
         ARCHIVE
             DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY
@@ -90,3 +91,31 @@ install(TARGETS yajp_lib
         INCLUDES
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/yajp
         )
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(yajp-config-version.cmake
+        VERSION ${PACKAGE_VERSION}
+        COMPATIBILITY ExactVersion
+        )
+
+install(EXPORT YAJPTargets
+        FILE yajp-config.cmake
+        NAMESPACE yajp::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/yajp
+        )
+
+configure_file(${CMAKE_CURRENT_LIST_DIR}/cmake/yajp-config.cmake.in yajp-config.cmake @ONLY)
+install(
+        FILES
+            "${CMAKE_CURRENT_BINARY_DIR}/yajp-config.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/yajp-config-version.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/yajp
+        )
+
+export(TARGETS yajp_lib
+        NAMESPACE yajp::
+        FILE YAJPTargets.cmake
+        )
+
+set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
+export(PACKAGE yajp)

@@ -3,7 +3,7 @@ add_executable(lexer_tests lexer_tests.c)
 target_include_directories(lexer_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
 target_link_libraries(lexer_tests
-        PRIVATE yajp::test_common yajp::lib
+        PRIVATE yajp::test_common yajp::yajp_lib
         )
 
 add_test(NAME LexerTest1 COMMAND $<TARGET_FILE:lexer_tests> 1)

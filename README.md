@@ -48,13 +48,20 @@ TBD
 | YAJP_BUFFER_SIZE       | STRING | 32             | Size in bytes of buffers used to work with JSON. If value can't be fitted into buffer it will be extended enough to handle value and size will be multiplicable by **YAJP_BUFFER_SIZE**. | 
 
 ## Usage
-To use library with your CMake project just add next lines to `CMakeLists.txt`:
+
+**YAJP** can be added as dependency to your CMake project as a subdirectory or as package obtained by `find-package`:
+ - If **YAJP** is added to your project as a subproject:
+```cmake
+include(<path/to/yajp/sources>)
+```
+ - If yajp is installed to your sysroot than `find-package` cmake command can be used:
 ```cmake
 find_package(yajp REQUIRED)
+```
 
-add_executable(main main.c)
-
-target_link_libraries(main PRIVATE yajp::lib)
+After that, in can be linked with your targets like this:
+```cmake
+target_link_libraries(target_name PRIVATE yajp::yajp_lib)
 ```
 
 ### Deserialization example
@@ -77,9 +84,14 @@ static int init_deserialization_declarations() {
     int ret;
     
     // declare rules actions what will describe how deserialization should go
-    ret = yajp_deserialization_action_init("int_field1", str_size_without_null("int_field1"), 
-                                           offsetof(test_struct_t, int_field1), sizeof(int),
-                                           YAJP_DESERIALIZATION_ACTION_TYPE_FIELD, yajp_parse_int, &actions[0]);
+    ret = yajp_deserialization_action_init("int_field1",                            // name of field in JSON 
+                                           str_size_without_null("int_field1"),     // size of field name without '\0'
+                                           offsetof(test_struct_t, int_field1),     // offset of field in deserializing structure
+                                           sizeof(int),                             // size of deserializing field
+                                           YAJP_DESERIALIZATION_ACTION_TYPE_FIELD,  // type of action
+                                           yajp_parse_int,                          // pointer to function what will convert string to field value
+                                           &actions[0]                              // action holder
+                                           );
 
     if (0 != ret) {
         return ret;

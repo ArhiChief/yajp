@@ -1,7 +1,7 @@
 add_executable(deserialization_tests deserialization_tests.c)
 
 target_link_libraries(deserialization_tests
-        PRIVATE yajp::test_common yajp::lib
+        PRIVATE yajp::test_common yajp::yajp_lib
         )
 
 target_include_directories(deserialization_tests
