@@ -70,11 +70,13 @@ done:
 
 ```c
 #include <yajp/deserialization.h>
+#include <yajp/deserialization_routine.h> // yajp_parse_int() is defined here
+
 #include <string.h>
 
 typedef struct {
     int int_field1;
-    int int_field2;
+    int other_field;
 } test_struct_t;
 
 static const yajp_deserialization_action_t actions[2];
@@ -84,36 +86,39 @@ static int init_deserialization_declarations() {
     int ret;
     
     // declare rules actions what will describe how deserialization should go
-    ret = yajp_deserialization_action_init("int_field1",                            // name of field in JSON 
-                                           str_size_without_null("int_field1"),     // size of field name without '\0'
-                                           offsetof(test_struct_t, int_field1),     // offset of field in deserializing structure
-                                           sizeof(int),                             // size of deserializing field
-                                           YAJP_DESERIALIZATION_ACTION_TYPE_FIELD,  // type of action
-                                           yajp_parse_int,                          // pointer to function what will convert string to field value
-                                           &actions[0]                              // action holder
-                                           );
+    ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(
+            test_struct_t,  // type of structure where deserializing field is stored
+            int_field1,     // name of field in deserializing structure
+            yajp_parse_int, // pointer to function used to deserialize JSON value into structure field. 
+            &actions[0]     // pointer to initializing deserialization action
+            );
 
     if (0 != ret) {
         return ret;
     }
     
-    ret = yajp_deserialization_action_init("int_field2", str_size_without_null("int_field2"), 
-                                           offsetof(test_struct_t, int_field2), sizeof(int),
-                                           YAJP_DESERIALIZATION_ACTION_TYPE_FIELD, yajp_parse_int, &actions[1]);
+    // in case if JSON field name is not equal to deserializing field name, this macro can be used 
+    ret = YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(
+            "int_field2",   // name of field in JSON stream
+            test_struct_t,  // type of structure where deserializing field is stored
+            other_field,    // name of field in deserializing structure
+            yajp_parse_int, // pointer to function used to deserialize JSON value into structure field. 
+            &actions[0]     // pointer to initializing deserialization action
+            );
 
     if (0 != ret) {
         return ret;
     }
 
-    ret = yajp_deserialization_ctx_init(actions, 2, &ctx);
+    ret = yajp_deserialization_ctx_init(actions, (sizeof(actions) / sizeof(actions[0])), &ctx);
     
     return ret;
 }
 
 int deserialize() {
-    const char *json = "{\"int_field1\":12345, \"int_field2\":332}";
+    const char *json = "{\"int_field1\":12345, \"other_field\":332}";
     size_t json_size = strlen(json) * sizeof(*json);
-    int ret;
+    yajp_deserialization_result_t ret;
     test_struct_t result;
 
     ret = init_deserialization_declarations();
@@ -125,3 +130,14 @@ int deserialize() {
     return ret;
 }
 ```
+
+### API Documentation
+**YAJP** provides next headers with definations of functions, structures, macros, etc:
+ - `yajp/deserialization.h`. Provides interfaces for deserialization routines;
+ - `yajp/deserialization_routines.h`. Provides functions what can be used to deserialize C structure fields from JSON values.
+
+`yajp/deserialization.h` provides next definitions:
+
+// TODO!!
+
+

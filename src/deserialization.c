@@ -84,21 +84,10 @@ static int yajp_deserialize(yajp_parser_data_t *data, const yajp_deserialization
     return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-int yajp_deserialize_json_string(const char *json, size_t json_size, const yajp_deserialization_ctx_t *ctx,
+yajp_deserialization_result_t yajp_deserialize_json_string(const char *json, size_t json_size, const yajp_deserialization_ctx_t *ctx,
                                  void *result, void *user_data) {
     FILE *json_stream;
-    int ret = -1;
+    yajp_deserialization_result_t ret;
 
     if (NULL != (json_stream = fmemopen((void *) json, json_size, "r"))) {
         ret = yajp_deserialize_json_stream(json_stream, ctx, result, user_data);
@@ -108,8 +97,8 @@ int yajp_deserialize_json_string(const char *json, size_t json_size, const yajp_
     return ret;
 }
 
-int yajp_deserialize_json_stream(FILE *json, const yajp_deserialization_ctx_t *ctx, void *result, void *user_data) {
-    int ret;
+yajp_deserialization_result_t yajp_deserialize_json_stream(FILE *json, const yajp_deserialization_ctx_t *ctx, void *result, void *user_data) {
+    yajp_deserialization_result_t ret;
     yajp_parser_data_t data = {
             .parser = NULL,
             .result = result,
@@ -122,7 +111,8 @@ int yajp_deserialize_json_stream(FILE *json, const yajp_deserialization_ctx_t *c
 #endif
         data.parser = yajp_parser_allocate(malloc);
         if (NULL != data.parser) {
-            ret = yajp_deserialize(&data, ctx);
+            //TODO: Fix return value of yajp_deserialize
+            ret.status = yajp_deserialize(&data, ctx);
             yajp_parser_release(data.parser, free);
         }
         yajp_lexer_release_input(&data.input);

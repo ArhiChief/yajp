@@ -71,18 +71,145 @@ int yajp_deserialization_ctx_init(yajp_deserialization_action_t *acts, int count
     return 0;
 }
 
-int yajp_deserialization_action_init(const char *field_name, size_t name_size, size_t offset, size_t field_size,
-                                     yajp_deserialization_action_type_t action_type, yajp_value_setter_t setter,
+char *yajp_deserialization_result_status_to_str(const yajp_deserialization_result_t *result) {
+#define STR_UNEXPECTED_EOF              "Unexpected end of stream"
+#define STR_DESERIALIZATION_SUCCEED     "Success"
+#define STR_UNRECOGNIZED_TOKEN          "Unrecognized token found"
+
+#ifdef YAJP_TRACK_STREAM
+    #define STR_DESERIALIZATION_FAILED  "Failed to deserialize field at line: %d, column: %d"
+    #define STR_UNEXPECTED_TOKEN        "Unexpected token found, expected: '%s', found: '%s' at line: %d, column: %d";
+    static const size_t description_len = sizeof(STR_UNEXPECTED_TOKEN) + (7 + 7 + 5 + 5) * sizeof(char);
+#else
+    #define STR_DESERIALIZATION_FAILED  "Failed to deserialize field"
+    #define STR_UNEXPECTED_TOKEN        "Unexpected token found, expected: '%s', found: '%s'"
+    static const size_t description_len = sizeof(STR_UNEXPECTED_TOKEN) + (7 + 7) * sizeof(char);
+#endif
+
+    char *description = NULL;
+    const char *expected;
+    const char *found;
+
+    if (NULL == (description = malloc(description_len))) {
+        return NULL;
+    }
+
+    if (YAJP_DESERIALIZATION_RESULT_STATUS_OK == result->status) {
+        memmove(description, STR_DESERIALIZATION_SUCCEED, sizeof(STR_DESERIALIZATION_SUCCEED));
+        return description;
+    }
+
+    if (0 != (result->status & YAJP_DESERIALIZATION_RESULT_STATUS_UNEXPECTED_EOF)) {
+        memmove(description, STR_UNEXPECTED_EOF, sizeof(STR_UNEXPECTED_EOF));
+        return description;
+    }
+
+    if (0 != (result->status & YAJP_DESERIALIZATION_RESULT_STATUS_UNRECOGNIZED_TOKEN)) {
+        memmove(description, STR_UNRECOGNIZED_TOKEN, sizeof(STR_UNRECOGNIZED_TOKEN));
+        return description;
+    }
+
+    if (0 != (result->status & YAJP_DESERIALIZATION_RESULT_STATUS_DESERIALIZATION_ERROR)) {
+#ifdef YAJP_TRACK_STREAM
+        snprintf(description, description_len, STR_DESERIALIZATION_FAILED, result->line_num, result->column_num);
+#else
+        snprintf(description, description_len, STR_DESERIALIZATION_FAILED);
+#endif
+        return description;
+    }
+
+    switch (result->status & 0x0F0) {
+        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_OBEGIN:
+            expected = "{";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_OEND:
+            expected = "}";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_ABEGIN:
+            expected = "[";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_AEND:
+            expected = "]";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_FIELD:
+            expected = "field";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_VALUE:
+            expected = "value";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_COMMA:
+            expected = ",";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_COLON:
+            expected = ":";
+            break;
+        default:
+            expected = "Unknown";
+            break;
+    }
+
+    switch (result->status & 0x00F) {
+        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_OBEGIN:
+            found = "{";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_OEND:
+            found = "}";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_ABEGIN:
+            found = "[";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_AEND:
+            found = "]";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_FIELD:
+            found = "field";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_VALUE:
+            found = "value";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_COMMA:
+            found = ",";
+            break;
+        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_COLON:
+            found = ":";
+            break;
+        default:
+            found = "Unknown";
+            break;
+    }
+
+#ifdef YAJP_TRACK_STREAM
+    snprintf(description, description_len, STR_UNEXPECTED_TOKEN, expected, found, result->line_num, result->column_num);
+#else
+    snprintf(description, description_len, STR_UNEXPECTED_TOKEN, expected, found);
+#endif
+
+    return description;
+
+#undef STR_UNEXPECTED_EOF
+#undef STR_DESERIALIZATION_SUCCEED
+#undef STR_DESERIALIZATION_FAILED
+#undef STR_UNEXPECTED_TOKEN
+}
+
+int yajp_deserialization_action_init(const char *field_name,
+                                     size_t name_size,
+                                     size_t offset,
+                                     size_t field_size,
+                                     yajp_deserialization_field_type_t field_type,
+                                     yajp_value_setter_t setter,
+                                     size_t counter_offset,
                                      yajp_deserialization_action_t *result) {
+
     memset(result, 0, sizeof(*result));
 
     result->field_key = yajp_calculate_hash(field_name, name_size);
     result->size = field_size;
     result->offset = offset;
-    result->type = action_type;
+    result->type = field_type;
 
-    switch (action_type) {
-        case YAJP_DESERIALIZATION_ACTION_TYPE_FIELD:
+    switch (field_type) {
+        case YAJP_DESERIALIZATION_FIELD_TYPE_PRIMITIVE:
             result->setter = setter;
             break;
         default:

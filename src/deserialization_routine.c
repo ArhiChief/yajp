@@ -31,12 +31,12 @@ int yajp_parse_short(const uint8_t *name, size_t name_size, const uint8_t *value
     uint8_t *pend;
     long result;
 
-    (void)name;
-    (void)name_size;
-    (void)user_data;
+    (void) name;
+    (void) name_size;
+    (void) user_data;
 
     if (NULL != value && 0 < value_size) {
-        result = strtol((char *)value, (char **)&pend, 10);
+        result = strtol((char *) value, (char **) &pend, 10);
 
         if ((errno == ERANGE && (result == LONG_MAX || result == LONG_MIN)) || (errno != 0 && result == 0)) {
             return -1;
@@ -50,7 +50,7 @@ int yajp_parse_short(const uint8_t *name, size_t name_size, const uint8_t *value
             return -1;
         }
 
-        *((short *) field) = (short)result;
+        *((short *) field) = (short) result;
         return 0;
     }
 
@@ -63,12 +63,12 @@ int yajp_parse_int(const uint8_t *name, size_t name_size, const uint8_t *value, 
     uint8_t *pend;
     long long int result;
 
-    (void)name;
-    (void)name_size;
-    (void)user_data;
+    (void) name;
+    (void) name_size;
+    (void) user_data;
 
     if (NULL != value && 0 < value_size) {
-        result = strtoll((char *)value, (char **)&pend, 10);
+        result = strtoll((char *) value, (char **) &pend, 10);
 
         if ((errno == ERANGE && (result == INT_MAX || result == INT_MIN)) || (errno != 0 && result == 0)) {
             return -1;
@@ -82,7 +82,7 @@ int yajp_parse_int(const uint8_t *name, size_t name_size, const uint8_t *value, 
             return -1;
         }
 
-        *((int *) field) = (int)result;
+        *((int *) field) = (int) result;
         return 0;
     }
 
@@ -95,12 +95,12 @@ int yajp_parse_long_int(const uint8_t *name, size_t name_size, const uint8_t *va
     uint8_t *pend;
     long long result;
 
-    (void)name;
-    (void)name_size;
-    (void)user_data;
+    (void) name;
+    (void) name_size;
+    (void) user_data;
 
     if (NULL != value && 0 < value_size) {
-        result = strtol((char *)value, (char **)&pend, 10);
+        result = strtol((char *) value, (char **) &pend, 10);
 
         if ((errno == ERANGE && (result == LONG_MAX || result == LONG_MIN)) || (errno != 0 && result == 0)) {
             return -1;
@@ -114,25 +114,26 @@ int yajp_parse_long_int(const uint8_t *name, size_t name_size, const uint8_t *va
             return -1;
         }
 
-        *((long *) field) = (long)result;
+        *((long *) field) = (long) result;
         return 0;
     }
 
     return -1;
 }
 
-int yajp_parse_long_long_int(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
-                             void *user_data) {
+int
+yajp_parse_long_long_int(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
+                         void *user_data) {
 
     uint8_t *pend;
     long long result;
 
-    (void)name;
-    (void)name_size;
-    (void)user_data;
+    (void) name;
+    (void) name_size;
+    (void) user_data;
 
     if (NULL != value && 0 < value_size) {
-        result = strtoll((char *)value, (char **)&pend, 10);
+        result = strtoll((char *) value, (char **) &pend, 10);
 
         if ((errno == ERANGE && (result == LLONG_MAX || result == LLONG_MIN)) || (errno != 0 && result == 0)) {
             return -1;
@@ -155,12 +156,12 @@ int yajp_parse_float(const uint8_t *name, size_t name_size, const uint8_t *value
     uint8_t *pend;
     float result;
 
-    (void)name;
-    (void)name_size;
-    (void)user_data;
+    (void) name;
+    (void) name_size;
+    (void) user_data;
 
     if (NULL != value && 0 < value_size) {
-        result = strtof((char *)value, (char **)&pend);
+        result = strtof((char *) value, (char **) &pend);
 
         if (errno == ERANGE && (errno != 0 && result == 0)) {
             return -1;
@@ -183,12 +184,12 @@ int yajp_parse_double(const uint8_t *name, size_t name_size, const uint8_t *valu
     uint8_t *pend;
     double result;
 
-    (void)name;
-    (void)name_size;
-    (void)user_data;
+    (void) name;
+    (void) name_size;
+    (void) user_data;
 
     if (NULL != value && 0 < value_size) {
-        result = strtod((char *)value, (char **)&pend);
+        result = strtod((char *) value, (char **) &pend);
 
         if (errno == ERANGE && (errno != 0 && result == 0)) {
             return -1;
@@ -211,12 +212,12 @@ int yajp_parse_long_double(const uint8_t *name, size_t name_size, const uint8_t 
     uint8_t *pend;
     long double result;
 
-    (void)name;
-    (void)name_size;
-    (void)user_data;
+    (void) name;
+    (void) name_size;
+    (void) user_data;
 
     if (NULL != value && 0 < value_size) {
-        result = strtold((char *)value, (char **)&pend);
+        result = strtold((char *) value, (char **) &pend);
 
         if (errno == ERANGE && (errno != 0 && result == 0)) {
             return -1;
@@ -237,25 +238,36 @@ int yajp_parse_long_double(const uint8_t *name, size_t name_size, const uint8_t 
 int yajp_parse_bool(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
                     void *user_data) {
 
-    bool result;
-    static const char true_str[] = {'t','r', 'u', 'e'};
+    static const char true_str[] = {'t', 'r', 'u', 'e'};
+    static const char false_str[] = {'f', 'a', 'l', 's', 'e'};
     static const size_t true_str_size = sizeof(true_str);
-    static const char false_str[] = {'f','a', 'l', 's', 'e'};
     static const size_t false_str_size = sizeof(false_str);
 
-    (void)name;
-    (void)name_size;
-    (void)user_data;
+    (void) name;
+    (void) name_size;
+    (void) user_data;
 
     if (NULL != value) {
         if (value_size == true_str_size && (0 == memcmp(value, true_str, true_str_size))) {
-            *((bool *)field) = true;
+            *((bool *) field) = true;
             return 0;
         } else if (value_size == false_str_size && (0 == memcmp(value, false_str, false_str_size))) {
-            *((bool *)field) = false;
+            *((bool *) field) = false;
             return 0;
         }
     }
 
     return -1;
+}
+
+int yajp_parse_string(const uint8_t *name, size_t name_size, const uint8_t *value, size_t value_size, void *field,
+                      void *user_data) {
+    (void) name;
+    (void) name_size;
+    (void) user_data;
+
+    memmove(field, value, value_size);
+    ((char *) field)[value_size] = '\0';
+
+    return 0;
 }

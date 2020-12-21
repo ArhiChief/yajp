@@ -35,35 +35,32 @@ const test_case_t test_suite[] = {
 /* test suite tests count declaration and initialization */
 const long test_count = sizeof(test_suite) / sizeof(test_suite[0]);
 
+
 static test_result_t yajp_deserialize_json_string_test1(int argc, char **argv) {
 
     typedef struct {
         int int_field1;
-        int int_field2;
+        int other_field;
     } test_struct_t;
 
-    static const char js[] = "{\"int_field1\":12345, \"int_field2\":332}";
+    static const char js[] = "{\"int_field1\":12345,\"int_field2\":332}";
     static const char js_size = sizeof(js);
 
     yajp_deserialization_ctx_t ctx;
     yajp_deserialization_action_t actions[2] = { 0 };
     test_struct_t test_struct;
-    int ret;
+    yajp_deserialization_result_t ret;
 
-    yajp_deserialization_action_init("int_field1", str_size_without_null("int_field1"), offsetof(test_struct_t, int_field1), sizeof(int),
-                                     YAJP_DESERIALIZATION_ACTION_TYPE_FIELD, yajp_parse_int, &actions[0]);
-
-    yajp_deserialization_action_init("int_field2", str_size_without_null("int_field2"), offsetof(test_struct_t, int_field2), sizeof(int),
-                                     YAJP_DESERIALIZATION_ACTION_TYPE_FIELD, yajp_parse_int, &actions[1]);
-
+    YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, int_field1, yajp_parse_int, &actions[0]);
+    YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT("int_field2", test_struct_t, other_field, yajp_parse_int, &actions[1]);
 
     yajp_deserialization_ctx_init(actions, 2, &ctx);
 
     ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
 
-    test_is_equal(ret, 0, "Deserialization failed");
+    test_is_equal(ret.status, YAJP_DESERIALIZATION_RESULT_STATUS_OK, "Deserialization failed");
     test_is_equal(test_struct.int_field1, 12345, "Structure wasn't deserialized correctly");
-    test_is_equal(test_struct.int_field2, 332, "Structure wasn't deserialized correctly");
+    test_is_equal(test_struct.other_field, 332, "Structure wasn't deserialized correctly");
 
     return TEST_RESULT_PASSED;
 }
