@@ -168,7 +168,6 @@ static yajp_deserialization_result_status_t yajp_deserialize(yajp_deserializatio
     yajp_lexer_token_t picked_token;
     yajp_parser_recognized_action_t recognized = {.token = NULL, .recognized = false};
 
-
     if (yajp_lexer_get_next_token(data->lexer_input, &picked_token)) {
         return YAJP_DESERIALIZATION_RESULT_STATUS_UNRECOGNIZED_TOKEN;
     }
@@ -272,10 +271,18 @@ static yajp_deserialization_result_status_t yajp_invoke_setter(yajp_value_setter
         if (NULL == tmp) {
             return YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
         }
-        *((void **) (field)) = tmp;
-    }
 
-    ret = setter(name, name_size, value, value_size, field, user_data);
+        *(void **)field = tmp;
+
+        ret = setter(name, name_size, value, value_size, tmp, user_data);
+
+        if (0 != ret) {
+            free(tmp);
+        }
+
+    } else {
+        ret = setter(name, name_size, value, value_size, field, user_data);
+    }
 
     return ret
            ? YAJP_DESERIALIZATION_RESULT_STATUS_DESERIALIZATION_ERROR

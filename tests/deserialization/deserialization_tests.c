@@ -108,7 +108,7 @@ static test_result_t yajp_deserialize_json_test_string_fields() {
         char *string4;
     } test_struct_t;
 
-    static const char js[] = "{\"string1\":\""str1"\",\"other_string\":\""str2"\",\"string3\":\""str3"\",\"other_string2\":\""str4"\"}";
+    static const char js[] = "{\"string1\":\""str1"\",\"other_string\":\""str2"\",\"string3\":\""str3"\",\"unused_string\":\"unused string\",\"other_string2\":\""str4"\"}";
     static const size_t js_size = sizeof(js);
     yajp_deserialization_ctx_t ctx;
     yajp_deserialization_result_t dres;
