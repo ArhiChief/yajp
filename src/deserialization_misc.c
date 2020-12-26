@@ -48,8 +48,8 @@ void yajp_sort_actions_in_context(yajp_deserialization_ctx_t *ctx) {
     }
 }
 
-const yajp_deserialization_action_t *yajp_get_action(const yajp_deserialization_ctx_t *ctx,
-                                                     const uint8_t *name, size_t name_size) {
+const yajp_deserialization_action_t *yajp_find_action_in_context(const yajp_deserialization_ctx_t *ctx,
+                                                                 const uint8_t *name, size_t name_size) {
     const yajp_deserialization_action_t *action = NULL;
     const yajp_deserialization_action_t key = { .field_key = yajp_calculate_hash(name, name_size) };
 
@@ -196,7 +196,7 @@ int yajp_deserialization_action_init(const char *field_name,
                                      size_t name_size,
                                      size_t offset,
                                      size_t field_size,
-                                     yajp_deserialization_field_type_t field_type,
+                                     yajp_deserialization_action_options_t options,
                                      yajp_value_setter_t setter,
                                      size_t counter_offset,
                                      yajp_deserialization_action_t *result) {
@@ -206,11 +206,16 @@ int yajp_deserialization_action_init(const char *field_name,
     result->field_key = yajp_calculate_hash(field_name, name_size);
     result->size = field_size;
     result->offset = offset;
-    result->type = field_type;
+    result->options = options;
 
-    switch (field_type) {
-        case YAJP_DESERIALIZATION_FIELD_TYPE_PRIMITIVE:
-            result->setter = setter;
+    switch (options) {
+        case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_PRIMITIVE:
+            result->option_params.field_primitive.setter = setter;
+            break;
+        case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING | YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE:
+            result->option_params.field_string.allocate = true;
+        case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING:
+            result->option_params.field_string.setter = setter;
             break;
         default:
             return -1;

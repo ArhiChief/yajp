@@ -70,13 +70,13 @@ done:
 
 ```c
 #include <yajp/deserialization.h>
-#include <yajp/deserialization_routine.h> // yajp_parse_int() is defined here
+#include <yajp/deserialization_routine.h> // yajp_set_int() is defined here
 
 #include <string.h>
 
 typedef struct {
     int int_field1;
-    int other_field;
+    int short_field;
 } test_struct_t;
 
 static const yajp_deserialization_action_t actions[2];
@@ -89,7 +89,7 @@ static int init_deserialization_declarations() {
     ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(
             test_struct_t,  // type of structure where deserializing field is stored
             int_field1,     // name of field in deserializing structure
-            yajp_parse_int, // pointer to function used to deserialize JSON value into structure field. 
+            yajp_set_int, // pointer to function used to deserialize JSON value into structure field. 
             &actions[0]     // pointer to initializing deserialization action
             );
 
@@ -101,8 +101,8 @@ static int init_deserialization_declarations() {
     ret = YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(
             "int_field2",   // name of field in JSON stream
             test_struct_t,  // type of structure where deserializing field is stored
-            other_field,    // name of field in deserializing structure
-            yajp_parse_int, // pointer to function used to deserialize JSON value into structure field. 
+            short_field,    // name of field in deserializing structure
+            yajp_set_int, // pointer to function used to deserialize JSON value into structure field. 
             &actions[0]     // pointer to initializing deserialization action
             );
 
@@ -116,7 +116,7 @@ static int init_deserialization_declarations() {
 }
 
 int deserialize() {
-    const char *json = "{\"int_field1\":12345, \"other_field\":332}";
+    const char *json = "{\"int_field1\":12345, \"short_field\":332}";
     size_t json_size = strlen(json) * sizeof(*json);
     yajp_deserialization_result_t ret;
     test_struct_t result;

@@ -27,8 +27,7 @@
 // starting symbol of grammar
 %start_symbol root
 
-root        ::= obj.
-root        ::= arr.
+root 	    ::= obj.
 
 obj         ::= OBEGIN obj_content OEND.
 obj         ::= OBEGIN OEND.
@@ -37,7 +36,9 @@ obj_content ::= pair.
 obj_content ::= obj_content COMMA.
 obj_content ::= obj_content pair.
 
-pair        ::= STRING(A) COLON value(B).	{ action->field = A; action->value = B; action->is_recognized = true; }
+key         ::= STRING(A) . { action->token = A; action->recognized = true; }
+
+pair        ::= key COLON value(A). { action->token = A; action->recognized = true; }
 
 arr         ::= ABEGIN arr_content AEND.
 arr         ::= ABEGIN AEND.
@@ -46,10 +47,9 @@ arr_content ::= value.
 arr_content ::= arr_content COMMA.
 arr_content ::= arr_content value.
 
-
 value       ::= obj.
 value       ::= arr.
-value       ::= STRING.          {  }
-value       ::= BOOLEAN.         {  }
-value       ::= NUMBER.          {  }
-value       ::= NULL.            {  }
+value       ::= STRING.
+value       ::= BOOLEAN.
+value       ::= NUMBER.
+value       ::= NULL.

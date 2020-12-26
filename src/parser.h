@@ -47,9 +47,8 @@ void yajp_parser_trace(FILE *TraceFILE, char *zTracePrompt);
  * Recognized parser actions. Retur
  */
 typedef struct {
-    bool is_recognized;
-    const yajp_lexer_token_t *field;
-    const yajp_lexer_token_t *value;
+    bool recognized;
+    const yajp_lexer_token_t *token;
 } yajp_parser_recognized_action_t;
 
 /**

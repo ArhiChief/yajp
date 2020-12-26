@@ -35,20 +35,6 @@ const long test_count = sizeof(test_suite) / sizeof(test_suite[0]);
 
 
 static test_result_t yajp_parser_parse_test1(int argc, char **argv) {
-    static const yajp_token_type_t tokens[] = { YAJP_TOKEN_ABEGIN, YAJP_TOKEN_NUMBER, YAJP_TOKEN_AEND};
-    static const int token_len = ARR_LEN(tokens);
-
-    void *parser;
-    yajp_parser_recognized_action_t recognized_action = YAJP_PARSER_RECOGNIZED_ACTION_NONE;
-    int i;
-
-    parser = yajp_parser_allocate(malloc);
-
-    for (i = 0; i < token_len; i++) {
-        yajp_parser_parse(parser, tokens[i], tokens[i], &recognized_action);
-    }
-
-    yajp_parser_release(parser, free);
-
+    // TODO: Implement
     return TEST_RESULT_PASSED;
 }

@@ -24,9 +24,17 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
+ *  Prototype of function used to convert string value into structure field type
  *
+ *  @param[in]      name        Pointer to string with name of field
+ *  @param[in]      name_size   Size of field name string in bytes
+ *  @param[in]      value       Pointer to string with field value
+ *  @param[in]      value_size  Size of value string in bytes
+ *  @param[out]     field       Pointer to field in structure
+ *  @param[in, out] user_data   Pointer to user data passed as parameter to deserialization functions
  */
 typedef int (*yajp_value_setter_t)(const uint8_t *name,
                                    size_t name_size,
@@ -36,14 +44,7 @@ typedef int (*yajp_value_setter_t)(const uint8_t *name,
                                    void *user_data
 );
 
-/**
- * Type of deserializing field
- */
-typedef enum {
-    YAJP_DESERIALIZATION_FIELD_TYPE_PRIMITIVE,
-    YAJP_DESERIALIZATION_FIELD_TYPE_STRING,
-    YAJP_DESERIALIZATION_FIELD_TYPE_PRIMITIVE_ARRAY,
-} yajp_deserialization_field_type_t;
+
 
 struct yajp_deserialization_ctx;
 struct yajp_deserialization_action;
@@ -60,28 +61,49 @@ struct yajp_deserialization_ctx {
 };
 
 /**
- * Deserialization action
+ * Deserializing option flags
+ */
+typedef enum yajp_deserialization_action_options {
+    YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE            = 0x000,
+    // type of field
+    YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_PRIMITIVE  = 0x010,    // deserializing element is primitive
+    YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING     = 0x020,    // deserializing element is string
+    YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_OBJECT     = 0x040,    // deserializing element is object
+
+    YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_ARRAY_OF   = 0x001,    // deserializing element is array. used with combination of other options
+
+    YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE        = 0x100     // notifies what memory for field should be allocated
+} yajp_deserialization_action_options_t;
+
+/**
+ * Description of deserialization action
  */
 struct yajp_deserialization_action {
-    size_t offset;
-    size_t size;
-    yajp_deserialization_field_type_t type;
-
-    unsigned long field_key;
+    size_t offset;                                  // offset of field in structure
+    size_t size;                                    // size of field
+    yajp_deserialization_action_options_t options;  // deserialization options
+    unsigned long field_key;                        // hash of field used for fast search
 
     union {
-        yajp_value_setter_t setter;
-    };
+        struct {
+            yajp_value_setter_t setter;             // pointer to setter function
+        } field_primitive;                          // for primitive fields (boolean, number)
+        struct {
+            yajp_value_setter_t setter;             // pointer to setter function
+            bool allocate;                          // memory allocation required for this deserializing field
+        } field_string;                             // for string fields
+    } option_params;                                // deserialization options data
 };
 
 /**
  * Represent status of JSON stream deserialization
  */
-typedef enum {
+typedef enum yajp_deserialization_result_status {
     YAJP_DESERIALIZATION_RESULT_STATUS_OK                       = 0x000, // Deserialization succeeded
     YAJP_DESERIALIZATION_RESULT_STATUS_DESERIALIZATION_ERROR    = 0x100, // Failed to deserialize value from JSON stream
     YAJP_DESERIALIZATION_RESULT_STATUS_UNEXPECTED_EOF           = 0x200, // Unexpected end of JSON stream
     YAJP_DESERIALIZATION_RESULT_STATUS_UNRECOGNIZED_TOKEN       = 0x300, // Unrecognized token found
+    YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET                = 0x400, // Some internal function of stdlib set errno
 
     YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_OBEGIN          = 0x010, // Parser expected begin of object
     YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_OEND            = 0x020, // Parser expected end of object
@@ -116,13 +138,13 @@ typedef enum {
  *       \c status to 0x00F and compare with YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_<X> to get type of token what
  *       parser has found.
  */
-typedef struct {
-    yajp_deserialization_result_status_t status;    // status of deserialization process.
+typedef struct yajp_deserialization_result {
+        yajp_deserialization_result_status_t status;    // status of deserialization process.
 #ifdef YAJP_TRACK_STREAM
-    int line_num;                                   // number of line where error happened
-    int column_num;                                 // number of collumn where error happened
+        int line_num;                                   // number of line where error happened
+        int column_num;                                 // number of collumn where error happened
 #endif
-} yajp_deserialization_result_t;
+    } yajp_deserialization_result_t;
 
 /**
  * Converts result status to string.
@@ -145,32 +167,32 @@ int yajp_deserialization_ctx_init(yajp_deserialization_action_t *acts, int count
 
 /**
  * Deserialize JSON stream into provided structure
- * @param[in]   json        Pointer to JSON stream
- * @param[in]   ctx         Pointer to deserialization context
- * @param[out]  result      Pointer to deserializing structure
- * @param[in]   user_data   Pointer to value what will be passed as \c user_data to \c setter in \c yajp_deserialization_action_init
+ * @param[in]   json                    Pointer to JSON stream
+ * @param[in]   ctx                     Pointer to deserialization context
+ * @param[out]  deserializing_struct    Pointer to deserializing structure
+ * @param[in]   user_data               Pointer to value what will be passed as \c user_data to \c setter in \c yajp_deserialization_action_init
  * @return      Result of deserialization process. See \c yajp_deserialization_result_t for details
  */
 yajp_deserialization_result_t yajp_deserialize_json_stream(FILE *json,
                                  const yajp_deserialization_ctx_t *ctx,
-                                 void *result,
+                                 void *deserializing_struct,
                                  void *user_data);
 
 /**
  * Deserialize plain JSON string into provided structure
- * @param[in]   json        Pointer to string with JSON
- * @param[in]   json_size   Size in bytes of deserializing JSON string
- * @param[in]   ctx         Pointer to deserialization context
- * @param[out]  result      Pointer to deserializing structure
- * @param[in]   user_data   Pointer to value what will be passed as \c user_data to \c setter in \c yajp_deserialization_action_init
+ * @param[in]   json                    Pointer to string with JSON
+ * @param[in]   json_size               Size in bytes of deserializing JSON string
+ * @param[in]   ctx                     Pointer to deserialization context
+ * @param[out]  deserializing_struct    Pointer to deserializing structure
+ * @param[in]   user_data               Pointer to value what will be passed as \c user_data to \c setter in \c yajp_deserialization_action_init
  * @return      Result of deserialization process. See \c yajp_deserialization_result_t for details
  *
- * @note    This function wraps passed JSON string into \c FILE using \c fmemopen call from \c stdio.h and calls \c yajp_deserialize_json_stream
+ * @note    This function wraps passed JSON string into \c FILE using \c fmemopen call from \c stdio.h
  */
 yajp_deserialization_result_t yajp_deserialize_json_string(const char *json,
                                  size_t json_size,
                                  const yajp_deserialization_ctx_t *ctx,
-                                 void *result,
+                                 void *deserializing_struct,
                                  void *user_data);
 
 
@@ -181,7 +203,7 @@ yajp_deserialization_result_t yajp_deserialize_json_string(const char *json,
  * @param[in]   name_size       Size of field name in JSON without '\0' character
  * @param[in]   offset          Offset of field in deserializing structure
  * @param[in]   field_size      Size of field in deserializing structure
- * @param[in]   field_type      Type of field in deserialization process
+ * @param[in]   options         Type of field in deserialization process
  * @param[in]   setter          Pointer to function used to deserialize JSON value into structure field
  * @param[out]  counter_offset  Offset of counter field used to store amount of elements in case of array deserialization
  * @param[out]  result          Pointer to initializing deserialization action
@@ -194,11 +216,28 @@ int yajp_deserialization_action_init(const char *field_name,
                                      size_t name_size,
                                      size_t offset,
                                      size_t field_size,
-                                     yajp_deserialization_field_type_t field_type,
+                                     yajp_deserialization_action_options_t options,
                                      yajp_value_setter_t setter,
                                      size_t counter_offset,
                                      yajp_deserialization_action_t *result
                                      );
+/**
+ * Calculates size of constant string without leading '\0' character.
+ *
+ * @param[in]   str Constant string
+ * @return      Size of string in bytes without '\0' character.
+ */
+#define string_size_without_null(str) ((sizeof((str))/sizeof(*(str)) - 1) * sizeof(*(str)))
+
+/**
+ *  Calculates size of structure member
+ */
+#define struct_field_size(TYPE, MEMBER) sizeof(((TYPE *)NULL)->MEMBER)
+
+/**
+ * Calculates size of object pointed by structure member
+ */
+#define struct_field_ptr_size(TYPE, MEMBER) sizeof(*((TYPE *)NULL)->MEMBER)
 
 /**
  * Convenient initialization of deserialization action for primitive fields
@@ -217,79 +256,88 @@ int yajp_deserialization_action_init(const char *field_name,
 #define YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, setter, result) \
     yajp_deserialization_action_init(                                                      \
         #field,                                                                            \
-        str_size_without_null(#field),                                                     \
+        string_size_without_null(#field),                                                  \
         offsetof(structure, field),                                                        \
-        sizeof(((structure *)NULL)->field),                                                \
-        YAJP_DESERIALIZATION_FIELD_TYPE_PRIMITIVE,                                         \
+        struct_field_size(structure, field),                                               \
+        YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_PRIMITIVE,                                \
         setter,                                                                            \
         0,                                                                                 \
         result)
 
 /*
- * Convenient initialization of deserialization action for primitive fields where JSON field name and deserializing field name are different
+ * Convenient initialization of deserialization action for primitive fields where JSON field name and deserializing
+ * field name are different
  *
  * @param[in]   json_field  Name of field in JSON stream
  * @param[in]   structure   Type of structure where deserializing field is stored
  * @param[in]   field       Name of field in deserializing structure
  * @param[in]   setter      Pointer to function used to deserialize JSON value into structure field
  * @param[out]  result      Pointer to initializing deserialization action
+ *
  * @return      Result of initialization. 0 on success
  */
 #define YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, setter, result)    \
     yajp_deserialization_action_init(                                                                               \
         json_field,                                                                                                 \
-        str_size_without_null(json_field),                                                                          \
+        string_size_without_null(json_field),                                                                       \
         offsetof(structure, field),                                                                                 \
-        sizeof(((structure *)NULL)->field),                                                                         \
-        YAJP_DESERIALIZATION_FIELD_TYPE_PRIMITIVE,                                                                  \
+        struct_field_size(structure, field),                                                                        \
+        YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_PRIMITIVE,                                                         \
         setter,                                                                                                     \
         0,                                                                                                          \
         result)
 
 /**
- * Convenient initialization of deserialization action for primitive fields
+ * Convenient initialization of deserialization action for string fields
  *
- * @param[in]   structure   Type of structure where deserializing field is stored
- * @param[in]   field       Name of field in deserializing structure
- * @param[in]   setter      Pointer to function used to deserialize JSON value into structure field
- * @param[out]  result      Pointer to initializing deserialization action
- * @return      Result of initialization. 0 on success
+ * @param[in]   structure
+ * @param[in]   field
+ * @param[in]   setter
+ * @param[in]   allocate
+ * @param[out]  result
  *
- * @note    Use this macro for deserialization of primitive fields like integers, doubles, booleans. Macro expect that
- *          name of field in deserializaing structure and JSON stream are same.
+ * @return
  *
- * @note    Use YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT to specify name of JSON stream field
+ * @note    Use this macro for deserialization of string fields Macro expect that name of field in deserializing
+ *          structure and JSON stream are same.
  */
-#define YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, setter, result) \
-    yajp_deserialization_action_init(                                                      \
-        #field,                                                                            \
-        str_size_without_null(#field),                                                     \
-        offsetof(structure, field),                                                        \
-        sizeof(((structure *)NULL)->field),                                                \
-        YAJP_DESERIALIZATION_FIELD_TYPE_PRIMITIVE,                                         \
-        setter,                                                                            \
-        0,                                                                                 \
+#define YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, setter, allocate, result)                       \
+    yajp_deserialization_action_init(                                                                                   \
+        #field,                                                                                                         \
+        string_size_without_null(#field),                                                                               \
+        offsetof(structure, field),                                                                                     \
+        struct_field_ptr_size(structure, field),                                                                        \
+        (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING |                                                              \
+            ((allocate) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE)),    \
+        setter,                                                                                                         \
+        0,                                                                                                              \
         result)
 
-/*
- * Convenient initialization of deserialization action for primitive fields where JSON field name and deserializing field name are different
+/**
+ * Convenient initialization of deserialization action for string fields
  *
- * @param[in]   json_field  Name of field in JSON stream
- * @param[in]   structure   Type of structure where deserializing field is stored
- * @param[in]   field       Name of field in deserializing structure
- * @param[in]   setter      Pointer to function used to deserialize JSON value into structure field
- * @param[out]  result      Pointer to initializing deserialization action
- * @return      Result of initialization. 0 on success
+ * @param[in]   json_field
+ * @param[in]   structure
+ * @param[in]   field
+ * @param[in]   setter
+ * @param[in]   allocate
+ * @param[out]  result
+ *
+ * @return
+ *
+ * @note    Use this macro for deserialization of string fields Macro expect that name of field in deserializing
+ *          structure and JSON stream are same.
  */
-#define YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, setter, result)    \
-    yajp_deserialization_action_init(                                                                               \
-        json_field,                                                                                                 \
-        str_size_without_null(json_field),                                                                          \
-        offsetof(structure, field),                                                                                 \
-        sizeof(((structure *)NULL)->field),                                                                         \
-        YAJP_DESERIALIZATION_FIELD_TYPE_PRIMITIVE,                                                                  \
-        setter,                                                                                                     \
-        0,                                                                                                          \
+#define YAJP_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, setter, allocate, result) \
+    yajp_deserialization_action_init(                                                                                   \
+        json_field,                                                                                                     \
+        string_size_without_null(json_field),                                                                           \
+        offsetof(structure, field),                                                                                     \
+        struct_field_ptr_size(structure, field),                                                                        \
+        (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING |                                                              \
+            ((allocate) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE)),    \
+        setter,                                                                                                         \
+        0,                                                                                                              \
         result)
 
-#endif //YAJP_DESERIALIZE_H
+#endif // YAJP_DESERIALIZE_H
