@@ -198,7 +198,6 @@ int yajp_deserialization_action_init(const char *field_name,
                                      size_t field_size,
                                      yajp_deserialization_action_options_t options,
                                      yajp_value_setter_t setter,
-                                     size_t counter_offset,
                                      yajp_deserialization_action_t *result) {
 
     memset(result, 0, sizeof(*result));
@@ -220,6 +219,29 @@ int yajp_deserialization_action_init(const char *field_name,
         default:
             return -1;
     }
+
+    return 0;
+}
+
+int yajp_deserialization_array_action_init(const char *field_name,
+                                           size_t name_size,
+                                           size_t field_offset,
+                                           size_t field_size,
+                                           yajp_deserialization_action_options_t options,
+                                           size_t counter_offset,
+                                           size_t final_dim_offset,
+                                           size_t rows_offset,
+                                           size_t elem_size,
+                                           size_t elems_offset,
+                                           yajp_value_setter_t setter,
+                                           yajp_deserialization_action_t *result) {
+
+    memset(result, 0, sizeof(*result));
+
+    result->field_key = yajp_calculate_hash(field_name, name_size);
+    result->size = field_size;
+    result->offset = field_offset;
+    result->options = options;
 
     return 0;
 }
