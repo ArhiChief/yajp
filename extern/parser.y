@@ -2,7 +2,7 @@
 %name yajp_parser
 
 // prefix will be added to the front of each terminal
-%token_prefix YAJP_TOKEN_
+%token_prefix YAJP_PARSER_TOKEN_
 
 // additional include directives
 %include {
@@ -36,12 +36,16 @@ obj_content ::= pair.
 obj_content ::= obj_content COMMA.
 obj_content ::= obj_content pair.
 
-key         ::= STRING(A) . { action->token = A; action->recognized = true; }
+key         ::= STRING(A) . 			{ action->token = A; action->recognized = true; }
 
-pair        ::= key COLON value(A). { action->token = A; action->recognized = true; }
+pair        ::= key COLON value(A). 		{ action->token = A; action->recognized = true; }
 
-arr         ::= ABEGIN arr_content AEND.
-arr         ::= ABEGIN AEND.
+
+arr_begin   ::= ABEGIN(A).			{ action->token = A; action->recognized = true; }
+arr_end	    ::= AEND(A).			{ action->token = A; action->recognized = true; }
+
+arr         ::= arr_begin arr_content arr_end.
+arr         ::= arr_begin arr_end.
 
 arr_content ::= value.
 arr_content ::= arr_content COMMA.
@@ -49,7 +53,7 @@ arr_content ::= arr_content value.
 
 value       ::= obj.
 value       ::= arr.
-value       ::= STRING.
-value       ::= BOOLEAN.
-value       ::= NUMBER.
-value       ::= NULL.
+value       ::= STRING(A).			{ action->token = A; action->recognized = true; }
+value       ::= BOOLEAN(A).			{ action->token = A; action->recognized = true; }
+value       ::= NUMBER(A).			{ action->token = A; action->recognized = true; }
+value       ::= NULL(A).			{ action->token = A; action->recognized = true; }

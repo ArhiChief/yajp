@@ -192,29 +192,39 @@ char *yajp_deserialization_result_status_to_str(const yajp_deserialization_resul
 #undef STR_UNEXPECTED_TOKEN
 }
 
+static void yajp_deserialization_action_init_common(const char *field_name,
+                                               size_t name_size,
+                                               size_t offset,
+                                               size_t field_size,
+                                               yajp_deserialization_action_options_t options,
+                                               yajp_deserialization_action_t *action) {
+    memset(action, 0, sizeof(*action));
+
+    action->field_key = yajp_calculate_hash(field_name, name_size);
+    action->size = field_size;
+    action->offset = offset;
+    action->options = options;
+}
+
 int yajp_deserialization_action_init(const char *field_name,
                                      size_t name_size,
                                      size_t offset,
                                      size_t field_size,
                                      yajp_deserialization_action_options_t options,
                                      yajp_value_setter_t setter,
-                                     yajp_deserialization_action_t *result) {
+                                     yajp_deserialization_action_t *action) {
 
-    memset(result, 0, sizeof(*result));
-
-    result->field_key = yajp_calculate_hash(field_name, name_size);
-    result->size = field_size;
-    result->offset = offset;
-    result->options = options;
+    yajp_deserialization_action_init_common(field_name, name_size, offset, field_size, options, action);
 
     switch (options) {
         case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_PRIMITIVE:
-            result->option_params.field_primitive.setter = setter;
+            action->option_params.primitive_field.setter = setter;
+            action->option_params.primitive_field.allocate = false;
             break;
         case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING | YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE:
-            result->option_params.field_string.allocate = true;
+            action->option_params.primitive_field.allocate = true;
         case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING:
-            result->option_params.field_string.setter = setter;
+            action->option_params.primitive_field.setter = setter;
             break;
         default:
             return -1;
@@ -234,14 +244,31 @@ int yajp_deserialization_array_action_init(const char *field_name,
                                            size_t elem_size,
                                            size_t elems_offset,
                                            yajp_value_setter_t setter,
-                                           yajp_deserialization_action_t *result) {
+                                           yajp_deserialization_action_t *action) {
 
-    memset(result, 0, sizeof(*result));
+    yajp_deserialization_action_init_common(field_name, name_size, field_offset, field_size, options, action);
 
-    result->field_key = yajp_calculate_hash(field_name, name_size);
-    result->size = field_size;
-    result->offset = field_offset;
-    result->options = options;
+    if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_ARRAY_OF) {
+        action->option_params.array_field.setter = setter;
 
-    return 0;
+        action->option_params.array_field.counter_offset = counter_offset;
+
+        action->option_params.array_field.final_dym_offset = final_dim_offset;
+
+        action->option_params.array_field.rows_offset = rows_offset;
+
+        action->option_params.array_field.elems_offset = elems_offset;
+        action->option_params.array_field.elem_size = elem_size;
+
+        if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE) {
+            action->option_params.array_field.allocate = true;
+        }
+        if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE_ELEMENTS) {
+            action->option_params.array_field.allocate_elems = true;
+        }
+
+        return 0;
+    }
+
+    return -1;
 }

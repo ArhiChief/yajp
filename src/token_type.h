@@ -22,21 +22,23 @@
 #ifndef YAJP_TOKEN_TYPE_H
 #define YAJP_TOKEN_TYPE_H
 
+#include "parser_tokens.h"
+
 /**
  * \brief   Represents token types scanned by lexer
  */
 typedef enum {
-    YAJP_TOKEN_EOF      = 0, /* End of file token type */
-    YAJP_TOKEN_OBEGIN   = 1, /* Object begin token type ({) */
-    YAJP_TOKEN_OEND     = 2, /* Object end token type (}) */
-    YAJP_TOKEN_COMMA    = 3, /* Elements separator token type (,) */
-    YAJP_TOKEN_STRING   = 4, /* String token type ("hello world") */
-    YAJP_TOKEN_COLON    = 5, /* Pair separator token type (:) */
-    YAJP_TOKEN_ABEGIN   = 6, /* Array begin token type ([) */
-    YAJP_TOKEN_AEND     = 7, /* Array end token type (]) */
-    YAJP_TOKEN_BOOLEAN  = 8, /* Boolean token type (true || false) */
-    YAJP_TOKEN_NUMBER   = 9, /* Number token type (1.23e-2) */
-    YAJP_TOKEN_NULL     = 10 /* Null token type (null) */
+    YAJP_TOKEN_EOF      = 0,                            /* End of file token type */
+    YAJP_TOKEN_OBEGIN   = YAJP_PARSER_TOKEN_OBEGIN,     /* Object begin token type ({) */
+    YAJP_TOKEN_OEND     = YAJP_PARSER_TOKEN_OEND,       /* Object end token type (}) */
+    YAJP_TOKEN_COMMA    = YAJP_PARSER_TOKEN_COMMA,      /* Elements separator token type (,) */
+    YAJP_TOKEN_STRING   = YAJP_PARSER_TOKEN_STRING,     /* String token type ("hello world") */
+    YAJP_TOKEN_COLON    = YAJP_PARSER_TOKEN_COLON,      /* Pair separator token type (:) */
+    YAJP_TOKEN_ABEGIN   = YAJP_PARSER_TOKEN_ABEGIN,     /* Array begin token type ([) */
+    YAJP_TOKEN_AEND     = YAJP_PARSER_TOKEN_AEND,       /* Array end token type (]) */
+    YAJP_TOKEN_BOOLEAN  = YAJP_PARSER_TOKEN_BOOLEAN,    /* Boolean token type (true || false) */
+    YAJP_TOKEN_NUMBER   = YAJP_PARSER_TOKEN_NUMBER,     /* Number token type (1.23e-2) */
+    YAJP_TOKEN_NULL     = YAJP_PARSER_TOKEN_NULL        /* Null token type (null) */
 } yajp_token_type_t; /* Token types */
 
 #endif //YAJP_TOKEN_TYPE_H

@@ -88,14 +88,18 @@ struct yajp_deserialization_action {
     union {
         struct {
             yajp_value_setter_t setter;             // pointer to setter function
-        } field_primitive;                          // for primitive fields (boolean, number)
+            bool allocate;                          // memory allocation required for this deserializing field
+        } primitive_field;                          // for primitive fields (boolean, number)
         struct {
             yajp_value_setter_t setter;             // pointer to setter function
-            bool allocate;                          // memory allocation required for this deserializing field
-        } field_string;                             // for string fields
-        struct {
-
-        } array_of_field;
+            bool allocate;                          // allocation of array holder needed
+            bool allocate_elems;                    // allocation for array values needed
+            size_t counter_offset;                  // offset of counter
+            size_t rows_offset;                     // offset of rows array
+            size_t elems_offset;                    // offset of array values
+            size_t final_dym_offset;                // offset of final_dim flag
+            size_t elem_size;                       // size of array element
+        } array_field;                              // for array fields
     } option_params;                                // deserialization options data
 };
 
@@ -209,7 +213,7 @@ yajp_deserialization_result_t yajp_deserialize_json_string(const char *json,
  * @param[in]   field_size      Size of field in deserializing structure
  * @param[in]   options         Deserialization options for field in deserialization process
  * @param[in]   setter          Pointer to function used to deserialize JSON value into structure field
- * @param[out]  result          Pointer to initializing deserialization action
+ * @param[out]  action          Pointer to initializing deserialization action
  *
  * @return  Result of initialization. 0 on success
  *
@@ -221,7 +225,7 @@ int yajp_deserialization_action_init(const char *field_name,
                                      size_t field_size,
                                      yajp_deserialization_action_options_t options,
                                      yajp_value_setter_t setter,
-                                     yajp_deserialization_action_t *result
+                                     yajp_deserialization_action_t *action
                                      );
 
 /**
@@ -281,7 +285,7 @@ int yajp_deserialization_action_init(const char *field_name,
  * @param[in]   elem_size           Size of array item
  * @param[in]   elems_offset        Offset of field to store array items
  * @param[in]   setter              Pointer to function used to deserialize JSON value into structure field
- * @param[out]  result              Pointer to initializing deserialization action
+ * @param[out]  action              Pointer to initializing deserialization action
  *
  * @return  Result of initialization. 0 on success
  *
@@ -298,7 +302,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
                                            size_t elem_size,
                                            size_t elems_offset,
                                            yajp_value_setter_t setter,
-                                           yajp_deserialization_action_t *result
+                                           yajp_deserialization_action_t *action
                                            );
 
 /**
@@ -325,7 +329,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
  * @param[in]   structure   Type of structure where deserializing field is stored
  * @param[in]   field       Name of field in deserializing structure
  * @param[in]   setter      Pointer to function used to deserialize JSON value into structure field
- * @param[out]  result      Pointer to initializing deserialization action
+ * @param[out]  action      Pointer to initializing deserialization action
  * @return      Result of initialization. 0 on success
  *
  * @note    Use this macro for deserialization of primitive fields like integers, doubles, booleans. Macro expect that
@@ -333,7 +337,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
  *
  * @note    Use YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT to specify name of JSON stream field
  */
-#define YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, setter, result) \
+#define YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, setter, action) \
     yajp_deserialization_action_init(                                                      \
         #field,                                                                            \
         string_size_without_null(#field),                                                  \
@@ -341,7 +345,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
         struct_field_size(structure, field),                                               \
         YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_PRIMITIVE,                                \
         setter,                                                                            \
-        result)
+        action)
 
 /*
  * Convenient initialization of deserialization action for primitive fields where JSON field name and deserializing
@@ -351,11 +355,11 @@ int yajp_deserialization_array_action_init(const char *field_name,
  * @param[in]   structure   Type of structure where deserializing field is stored
  * @param[in]   field       Name of field in deserializing structure
  * @param[in]   setter      Pointer to function used to deserialize JSON value into structure field
- * @param[out]  result      Pointer to initializing deserialization action
+ * @param[out]  action      Pointer to initializing deserialization action
  *
  * @return      Result of initialization. 0 on success
  */
-#define YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, setter, result)    \
+#define YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, setter, action)    \
     yajp_deserialization_action_init(                                                                               \
         json_field,                                                                                                 \
         string_size_without_null(json_field),                                                                       \
@@ -363,7 +367,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
         struct_field_size(structure, field),                                                                        \
         YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_PRIMITIVE,                                                         \
         setter,                                                                                                     \
-        result)
+        action)
 
 /**
  * Convenient initialization of deserialization action for string fields
@@ -372,14 +376,14 @@ int yajp_deserialization_array_action_init(const char *field_name,
  * @param[in]   field
  * @param[in]   setter
  * @param[in]   allocate
- * @param[out]  result
+ * @param[out]  action
  *
  * @return
  *
  * @note    Use this macro for deserialization of string fields Macro expect that name of field in deserializing
  *          structure and JSON stream are same.
  */
-#define YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, setter, allocate, result)                       \
+#define YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, setter, allocate, action)                       \
     yajp_deserialization_action_init(                                                                                   \
         #field,                                                                                                         \
         string_size_without_null(#field),                                                                               \
@@ -388,7 +392,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
         (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING |                                                              \
             ((allocate) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE)),    \
         setter,                                                                                                         \
-        result)
+        action)
 
 /**
  * Convenient initialization of deserialization action for string fields
@@ -405,7 +409,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
  * @note    Use this macro for deserialization of string fields Macro expect that name of field in deserializing
  *          structure and JSON stream are same.
  */
-#define YAJP_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, setter, allocate, result) \
+#define YAJP_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, setter, allocate, action) \
     yajp_deserialization_action_init(                                                                                   \
         json_field,                                                                                                     \
         string_size_without_null(json_field),                                                                           \
@@ -414,7 +418,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
         (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING |                                                              \
             ((allocate) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE)),    \
         setter,                                                                                                         \
-        result)
+        action)
 
 /**
  * Convenient initialization of deserialization action for array of primitives field
@@ -434,9 +438,8 @@ int yajp_deserialization_array_action_init(const char *field_name,
  *
  * @note    Use this macro for deserialization of array of primitives field. Macro expects that name of field in
  *          deserializing structure and JSON stream are same.
- *
  */
-#define YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, result)    \
+#define YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, action)    \
     yajp_deserialization_array_action_init(                                                                                                                                             \
         #field,                                                                                                                                                                         \
         string_size_without_null(#field),                                                                                                                                               \
@@ -451,7 +454,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
         sizeof(elem_type),                                                                                                                                                              \
         offsetof(field_type, elems),                                                                                                                                                    \
         setter,                                                                                                                                                                         \
-        result                                                                                                                                                                          \
+        action                                                                                                                                                                          \
     )
 
 /**
@@ -473,9 +476,8 @@ int yajp_deserialization_array_action_init(const char *field_name,
  *
  * @note    Use this macro for deserialization of array of primitives field. Macro expects that name of field in
  *          deserializing structure and JSON stream are same.
- *
  */
-#define YAJP_ARRAY_OF_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, result)  \
+#define YAJP_ARRAY_OF_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, action)  \
     yajp_deserialization_array_action_init(                                                                                                                                                                 \
         json_field,                                                                                                                                                                                         \
         string_size_without_null(json_field),                                                                                                                                                               \
@@ -490,7 +492,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
         sizeof(elem_type),                                                                                                                                                                                  \
         offsetof(field_type, elems),                                                                                                                                                                        \
         setter,                                                                                                                                                                                             \
-        result                                                                                                                                                                                              \
+        action                                                                                                                                                                                              \
     )
 
 
@@ -512,24 +514,23 @@ int yajp_deserialization_array_action_init(const char *field_name,
  *
  * @note    Use this macro for deserialization of array of primitives field. Macro expects that name of field in
  *          deserializing structure and JSON stream are same.
- *
  */
-#define YAJP_ARRAY_OF_STRING_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, result)    \
-    yajp_deserialization_array_action_init(                                                                                                                                             \
-        #field,                                                                                                                                                                         \
-        string_size_without_null(#field),                                                                                                                                               \
-        offsetof(structure, field),                                                                                                                                                     \
-        sizeof(field_type),                                                                                                                                                             \
-        YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING |                                                                           \
-            ((allocate) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE) |                                                                    \
-            ((allocate_elem) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE_ELEMENTS : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE),                                                       \
-        offsetof(field_type, counter),                                                                                                                                                  \
-        offsetof(field_type, final_dim),                                                                                                                                                \
-        offsetof(field_type, rows),                                                                                                                                                     \
-        sizeof(elem_type),                                                                                                                                                              \
-        offsetof(field_type, elems),                                                                                                                                                    \
-        setter,                                                                                                                                                                         \
-        result                                                                                                                                                                          \
+#define YAJP_ARRAY_OF_STRING_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, action)   \
+    yajp_deserialization_array_action_init(                                                                                                                                         \
+        #field,                                                                                                                                                                     \
+        string_size_without_null(#field),                                                                                                                                           \
+        offsetof(structure, field),                                                                                                                                                 \
+        sizeof(field_type),                                                                                                                                                         \
+        YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING |                                                                       \
+            ((allocate) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE) |                                                                \
+            ((allocate_elem) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE_ELEMENTS : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE),                                                   \
+        offsetof(field_type, counter),                                                                                                                                              \
+        offsetof(field_type, final_dim),                                                                                                                                            \
+        offsetof(field_type, rows),                                                                                                                                                 \
+        sizeof(elem_type),                                                                                                                                                          \
+        offsetof(field_type, elems),                                                                                                                                                \
+        setter,                                                                                                                                                                     \
+        action                                                                                                                                                                      \
     )
 
 /**
@@ -551,9 +552,8 @@ int yajp_deserialization_array_action_init(const char *field_name,
  *
  * @note    Use this macro for deserialization of array of primitives field. Macro expects that name of field in
  *          deserializing structure and JSON stream are same.
- *
  */
-#define YAJP_ARRAY_OF_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, result)  \
+#define YAJP_ARRAY_OF_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, action)  \
     yajp_deserialization_array_action_init(                                                                                                                                                              \
         json_field,                                                                                                                                                                                      \
         string_size_without_null(json_field),                                                                                                                                                            \
@@ -568,7 +568,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
         sizeof(elem_type),                                                                                                                                                                               \
         offsetof(field_type, elems),                                                                                                                                                                     \
         setter,                                                                                                                                                                                          \
-        result                                                                                                                                                                                           \
+        action                                                                                                                                                                                           \
     )
 
 #endif // YAJP_DESERIALIZE_H
