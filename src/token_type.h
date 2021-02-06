@@ -27,7 +27,7 @@
 /**
  * \brief   Represents token types scanned by lexer
  */
-typedef enum {
+typedef enum yajp_token_type {
     YAJP_TOKEN_EOF      = 0,                            /* End of file token type */
     YAJP_TOKEN_OBEGIN   = YAJP_PARSER_TOKEN_OBEGIN,     /* Object begin token type ({) */
     YAJP_TOKEN_OEND     = YAJP_PARSER_TOKEN_OEND,       /* Object end token type (}) */

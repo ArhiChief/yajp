@@ -16,7 +16,7 @@
 %token_type { const yajp_lexer_token_t * }
 
 // fourth argument for yajp_parser_parse function
-%extra_argument { yajp_parser_recognized_action_t *action }
+%extra_argument { yajp_parser_recognized_entity_t *entity }
 
 /*
  * Grammar based on https://web.cs.dal.ca/~sjackson/bitJson/JSON.html with
@@ -36,24 +36,24 @@ obj_content ::= pair.
 obj_content ::= obj_content COMMA.
 obj_content ::= obj_content pair.
 
-key         ::= STRING(A) . 			{ action->token = A; action->recognized = true; }
+key         ::= STRING(A). 			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_KEY; }
 
-pair        ::= key COLON value(A). 		{ action->token = A; action->recognized = true; }
+pair        ::= key COLON value. 		{ entity->token = NULL; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR; }
 
 
-arr_begin   ::= ABEGIN(A).			{ action->token = A; action->recognized = true; }
-arr_end	    ::= AEND(A).			{ action->token = A; action->recognized = true; }
+arr_begin   ::= ABEGIN.				{ entity->token = NULL; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_ARRAY; }
 
-arr         ::= arr_begin arr_content arr_end.
-arr         ::= arr_begin arr_end.
+arr         ::= arr_begin arr_content AEND.
+arr         ::= arr_begin AEND.
 
 arr_content ::= value.
 arr_content ::= arr_content COMMA.
 arr_content ::= arr_content value.
 
-value       ::= obj.
-value       ::= arr.
-value       ::= STRING(A).			{ action->token = A; action->recognized = true; }
-value       ::= BOOLEAN(A).			{ action->token = A; action->recognized = true; }
-value       ::= NUMBER(A).			{ action->token = A; action->recognized = true; }
-value       ::= NULL(A).			{ action->token = A; action->recognized = true; }
+/* code snipset for "value ::= obj" and "value ::= arr" can be probably skipped */
+value       ::= obj.				{ entity->token = NULL; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_OBJECT; }
+value       ::= arr.				{ entity->token = NULL; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_ARRAY; }
+value       ::= STRING(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
+value       ::= BOOLEAN(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
+value       ::= NUMBER(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
+value       ::= NULL(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }

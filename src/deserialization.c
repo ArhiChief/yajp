@@ -28,7 +28,7 @@
 #include <string.h>
 #include <stdio.h>
 
-typedef struct {
+typedef struct yajp_deserialization_data {
     void *user_data;
     void *parser;
     yajp_lexer_input_t *lexer_input;
@@ -179,34 +179,50 @@ end:
 static yajp_deserialization_result_status_t yajp_deserialize(yajp_deserialization_data_t *data,
                                                              const yajp_deserialization_ctx_t *ctx,
                                                              void *deserializing_struct) {
-    yajp_deserialization_result_status_t result;
-    yajp_lexer_token_t picked_token;
-    yajp_parser_recognized_action_t recognized = {.token = NULL, .recognized = false};
+#define TOKENS_CNT 3
+    yajp_deserialization_result_status_t result = YAJP_DESERIALIZATION_RESULT_STATUS_OK;
+    yajp_lexer_token_t tokens[TOKENS_CNT];
+    yajp_lexer_token_t *current_token;
+    yajp_token_type_t last_token;
+    yajp_parser_recognized_entity_t recognized_entity;
+    int i = 0, ret;
 
-    if (yajp_lexer_get_next_token(data->lexer_input, &picked_token)) {
-        return YAJP_DESERIALIZATION_RESULT_STATUS_UNRECOGNIZED_TOKEN;
-    }
+    memset(tokens, 0, sizeof(tokens));
 
-    if (YAJP_TOKEN_EOF == picked_token.token) {
-        result = YAJP_DESERIALIZATION_RESULT_STATUS_OK;
-        yajp_parser_parse(data->parser, picked_token.token, &picked_token, &recognized);
-        goto end;
-    }
-
-    yajp_parser_parse(data->parser, picked_token.token, &picked_token, &recognized);
-
-    if (recognized.recognized) {
-        result = yajp_deserialize_value(data, ctx, recognized.token, deserializing_struct);
-        if (YAJP_DESERIALIZATION_RESULT_STATUS_OK != result) {
+    do {
+        current_token = &tokens[i % TOKENS_CNT];
+        ret = yajp_lexer_get_next_token(data->lexer_input, current_token);
+        if (ret) {
+            result = YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
             goto end;
         }
-    }
+        last_token = current_token->token;
 
-    result = yajp_deserialize(data, ctx, deserializing_struct);
+        recognized_entity.type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_NONE;
+        yajp_parser_parse(data->parser, last_token, current_token, &recognized_entity);
+
+        if (YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_KEY == recognized_entity.type) {
+            result = yajp_deserialize_value(data, ctx, recognized_entity.token, deserializing_struct);
+            if (YAJP_DESERIALIZATION_RESULT_STATUS_OK != result) {
+                goto end;
+            }
+        }
+
+        i++;
+        if (i >= TOKENS_CNT) {
+            yajp_lexer_release_token(&tokens[i % TOKENS_CNT]);
+        }
+
+    } while (YAJP_TOKEN_EOF != last_token);
 
 end:
-    yajp_lexer_release_token(&picked_token);
+    for (i = 0; i < TOKENS_CNT; i++) {
+        yajp_lexer_release_token(&tokens[(i - TOKENS_CNT) % TOKENS_CNT]);
+    }
+
     return result;
+
+#undef TOKENS_CNT
 }
 
 static yajp_deserialization_result_status_t yajp_deserialize_value(yajp_deserialization_data_t *data,
@@ -228,14 +244,12 @@ static yajp_deserialization_result_status_t yajp_deserialize_value(yajp_deserial
             case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING:
                 status = yajp_parse_primitive_value(data, name, action, sizeof(char), deserializing_struct);
                 break;
-
             case (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_PRIMITIVE):
                 status = yajp_parse_array_value(data, name, action, 0, deserializing_struct);
                 break;
             case (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING):
                 status = yajp_parse_array_value(data, name, action, sizeof(char), deserializing_struct);
                 break;
-
             default:
                 status = YAJP_DESERIALIZATION_RESULT_STATUS_UNRECOGNIZED_TOKEN;
                 break;
@@ -252,40 +266,40 @@ static yajp_deserialization_result_status_t  yajp_parse_primitive_value(yajp_des
                                                                         const yajp_deserialization_action_t *action,
                                                                         size_t additional_size,
                                                                         void *base_address) {
-    const int tokens_cnt = 2;
-    yajp_deserialization_result_status_t result;
-    size_t allocation_size = 0;
-    int i = tokens_cnt;
-    yajp_lexer_token_t picked_tokens[tokens_cnt];
-    yajp_lexer_token_t *cur_tok;
-    yajp_parser_recognized_action_t recognized;
-
-    do {
-        cur_tok = &picked_tokens[tokens_cnt - i];
-        yajp_lexer_get_next_token(data->lexer_input, cur_tok);
-        yajp_parser_parse(data->parser, cur_tok->token, cur_tok, &recognized);
-    } while (--i);
-
-    if (recognized.recognized) {
-        if (action->option_params.primitive_field.allocate) {
-            allocation_size = recognized.token->attributes.value_size + additional_size;
-        }
-
-        result = yajp_invoke_setter(action->option_params.primitive_field.setter, name->attributes.value,
-                                    name->attributes.value_size, recognized.token->attributes.value,
-                                    recognized.token->attributes.value_size,
-                                    action->option_params.primitive_field.allocate, allocation_size, data->user_data,
-                                    ((uint8_t *) base_address) + action->offset);
-    } else {
-        result = YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_VALUE;
-    }
-
-    for (i = 0; i < tokens_cnt; i++) {
-        cur_tok = &picked_tokens[i];
-        yajp_lexer_release_token(cur_tok);
-    }
-
-    return result;
+//    const int tokens_cnt = 2;
+//    yajp_deserialization_result_status_t result;
+//    size_t allocation_size = 0;
+//    int i = tokens_cnt;
+//    yajp_lexer_token_t picked_tokens[tokens_cnt];
+//    yajp_lexer_token_t *cur_tok;
+//    yajp_parser_recognized_action_t recognized;
+//
+//    do {
+//        cur_tok = &picked_tokens[tokens_cnt - i];
+//        yajp_lexer_get_next_token(data->lexer_input, cur_tok);
+//        yajp_parser_parse(data->parser, cur_tok->token, cur_tok, &recognized);
+//    } while (--i);
+//
+//    if (recognized.recognized) {
+//        if (action->option_params.primitive_field.allocate) {
+//            allocation_size = recognized.token->attributes.value_size + additional_size;
+//        }
+//
+//        result = yajp_invoke_setter(action->option_params.primitive_field.setter, name->attributes.value,
+//                                    name->attributes.value_size, recognized.token->attributes.value,
+//                                    recognized.token->attributes.value_size,
+//                                    action->option_params.primitive_field.allocate, allocation_size, data->user_data,
+//                                    ((uint8_t *) base_address) + action->offset);
+//    } else {
+//        result = YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_VALUE;
+//    }
+//
+//    for (i = 0; i < tokens_cnt; i++) {
+//        cur_tok = &picked_tokens[i];
+//        yajp_lexer_release_token(cur_tok);
+//    }
+//
+//    return result;
 }
 
 static yajp_deserialization_result_status_t yajp_parse_array_value(yajp_deserialization_data_t *data,
@@ -293,50 +307,50 @@ static yajp_deserialization_result_status_t yajp_parse_array_value(yajp_deserial
                                                                    const yajp_deserialization_action_t *action,
                                                                    size_t array_item_additional_size,
                                                                    void *base_address) {
-    yajp_parser_recognized_action_t recognized_action;
-    yajp_lexer_token_t picked_token;
-    yajp_token_type_t last_token = { 0 };
-    bool is_current_arr = true;
-    size_t arr_size = 0;
-
-    if (action->options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE) {
-        void *tmp = malloc(action->size);
-        if (NULL == tmp) {
-            return YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
-        }
-
-        memset(tmp, 0, action->size);
-
-        *(void **)base_address = tmp;
-        base_address = tmp;
-    }
-
-    do {
-        recognized_action.recognized = false;
-        yajp_lexer_release_token(&last_token);
-
-        yajp_lexer_get_next_token(data->lexer_input, &picked_token);
-        last_token = picked_token.token;
-        yajp_parser_parse(data->parser, last_token, &picked_token, &recognized_action);
-
-        if (YAJP_TOKEN_ABEGIN == last_token) {
-
-            if (is_current_arr) {
-                is_current_arr = false;
-                continue;
-            }
-
-            // array element is array
-        }
-
-        if (recognized_action.recognized && YAJP_TOKEN_AEND != last_token) {
-            void
-            if (action->option_params.array_field.allocate_elems) {
-
-            }
-        }
-
-    } while (last_token != YAJP_TOKEN_AEND);
+//    yajp_parser_recognized_action_t recognized_action;
+//    yajp_lexer_token_t picked_token;
+//    yajp_token_type_t last_token = { 0 };
+//    bool is_current_arr = true;
+//    size_t arr_size = 0;
+//
+//    if (action->options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE) {
+//        void *tmp = malloc(action->size);
+//        if (NULL == tmp) {
+//            return YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
+//        }
+//
+//        memset(tmp, 0, action->size);
+//
+//        *(void **)base_address = tmp;
+//        base_address = tmp;
+//    }
+//
+//    do {
+//        recognized_action.recognized = false;
+//        yajp_lexer_release_token(&last_token);
+//
+//        yajp_lexer_get_next_token(data->lexer_input, &picked_token);
+//        last_token = picked_token.token;
+//        yajp_parser_parse(data->parser, last_token, &picked_token, &recognized_action);
+//
+//        if (YAJP_TOKEN_ABEGIN == last_token) {
+//
+//            if (is_current_arr) {
+//                is_current_arr = false;
+//                continue;
+//            }
+//
+//            // array element is array
+//        }
+//
+//        if (recognized_action.recognized && YAJP_TOKEN_AEND != last_token) {
+//            void
+//            if (action->option_params.array_field.allocate_elems) {
+//
+//            }
+//        }
+//
+//    } while (last_token != YAJP_TOKEN_AEND);
 
     return YAJP_DESERIALIZATION_RESULT_STATUS_OK;
 }
@@ -376,7 +390,7 @@ static yajp_deserialization_result_status_t yajp_invoke_setter(yajp_value_setter
 
 static yajp_deserialization_result_status_t yajp_skip_json_object(yajp_deserialization_data_t *data) {
     yajp_lexer_token_t picked_token = { 0 };
-    yajp_parser_recognized_action_t recognized_action;
+    yajp_parser_recognized_entity_t recognized_entity;
     yajp_token_type_t picked_token_type;
     int open_brackets_count;
 
@@ -386,7 +400,7 @@ static yajp_deserialization_result_status_t yajp_skip_json_object(yajp_deseriali
     }
     picked_token_type = picked_token.token;
 
-    yajp_parser_parse(data->parser, picked_token.token, &picked_token, &recognized_action);
+    yajp_parser_parse(data->parser, picked_token.token, &picked_token, &recognized_entity);
     yajp_lexer_release_token(&picked_token);
 
     switch (picked_token_type) {
@@ -407,7 +421,7 @@ static yajp_deserialization_result_status_t yajp_skip_json_object(yajp_deseriali
                     open_brackets_count++;
                 }
 
-                yajp_parser_parse(data->parser, picked_token.token, &picked_token, &recognized_action);
+                yajp_parser_parse(data->parser, picked_token.token, &picked_token, &recognized_entity);
                 yajp_lexer_release_token(&picked_token);
             } while (open_brackets_count != 0);
 
@@ -416,13 +430,13 @@ static yajp_deserialization_result_status_t yajp_skip_json_object(yajp_deseriali
         case YAJP_TOKEN_NUMBER:
         case YAJP_TOKEN_STRING:
         case YAJP_TOKEN_BOOLEAN:
-        case YAJP_TOKEN_NULL: { // skipping primitive or string value
+        case YAJP_TOKEN_NULL: { // skipping primitives
             do {
                 if (yajp_lexer_get_next_token(data->lexer_input, &picked_token)) {
                     return YAJP_DESERIALIZATION_RESULT_STATUS_UNRECOGNIZED_TOKEN;
                 }
                 picked_token_type = picked_token.token;
-                yajp_parser_parse(data->parser, picked_token.token, &picked_token, &recognized_action);
+                yajp_parser_parse(data->parser, picked_token.token, &picked_token, &recognized_entity);
                 yajp_lexer_release_token(&picked_token);
             } while ((YAJP_TOKEN_COMMA != picked_token_type) && (YAJP_TOKEN_OEND != picked_token_type));
 
