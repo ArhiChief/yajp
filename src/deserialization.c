@@ -418,6 +418,7 @@ static yajp_deserialization_result_status_t yajp_parse_array_value(yajp_deserial
             *(void **)address = tmp;
         }
     } else {
+        memset(address, 0, action->size);
         result = yajp_parse_array_value_internal(data, name, action, array_item_additional_size, address);
     }
 
@@ -472,15 +473,26 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
                 }
 
                 *(void **)(address + action->option_params.array_field.elems_offset) = elem_address;
-
             } else {
                 elem_address = address + action->option_params.array_field.elems_offset;
+            }
+
+            elem_address += row_shift;
+
+            if (action->options & YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING) {
+                void *str = malloc(recognized_entity.token->attributes.value_size + array_item_additional_size);
+                if (NULL == str) {
+                    result = YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
+                    goto end;
+                }
+                *(void **)(elem_address) = str;
+                elem_address = str;
             }
 
             setter_result = action->option_params.array_field
                     .setter(name->attributes.value, name->attributes.value_size,
                             recognized_entity.token->attributes.value, recognized_entity.token->attributes.value_size,
-                            elem_address + row_shift, data->user_data);
+                            elem_address, data->user_data);
 
             if (0 != setter_result) {
                 result = YAJP_DESERIALIZATION_RESULT_STATUS_DESERIALIZATION_ERROR;
