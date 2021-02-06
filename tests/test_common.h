@@ -159,7 +159,7 @@ extern const test_case_t test_suite[];
  *
  *  @return     @see test_expression definition
  */
-#define test_is_true(val, errmsg, ...) do { test_expression(((val) == (false)), errmsg, ##__VA_ARGS__); } while(0)
+#define test_is_true(val, errmsg, ...) do { test_expression(((val) == (true)), errmsg, ##__VA_ARGS__); } while(0)
 
 /**
  *  Test that left argument is less than right

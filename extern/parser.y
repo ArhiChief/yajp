@@ -18,16 +18,9 @@
 // fourth argument for yajp_parser_parse function
 %extra_argument { yajp_parser_recognized_entity_t *entity }
 
-/*
- * Grammar based on https://web.cs.dal.ca/~sjackson/bitJson/JSON.html with
- * additional changes which are necessary for our needs.
- */
+%start_symbol start
 
-
-// starting symbol of grammar
-%start_symbol root
-
-root 	    ::= obj.
+start 	    ::= obj.
 
 obj         ::= OBEGIN obj_content OEND.
 obj         ::= OBEGIN OEND.
@@ -42,20 +35,21 @@ pair_value  ::= COLON value.
 
 pair        ::= pair_key pair_value.		{ entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR; }
 
+arr_begin   ::= ABEGIN.				{ entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_ABEGIN; }
+arr_end     ::= AEND.				{ entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_AEND; }
 
-arr_begin   ::= ABEGIN.				{ entity->token = NULL; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_ARRAY; }
-
-arr         ::= arr_begin arr_content AEND.
-arr         ::= arr_begin AEND.
+arr         ::= arr_begin arr_content arr_end.
+arr         ::= arr_begin arr_end.
 
 arr_content ::= value.
 arr_content ::= arr_content COMMA.
 arr_content ::= arr_content value.
 
-/* code snipset for "value ::= obj" and "value ::= arr" can be probably skipped */
-value       ::= obj.				{ entity->token = NULL; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_OBJECT; }
-value       ::= arr.				{ entity->token = NULL; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_ARRAY; }
+value       ::= obj.
+value       ::= arr.
 value       ::= STRING(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
 value       ::= BOOLEAN(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
 value       ::= NUMBER(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
 value       ::= NULL(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
+
+
