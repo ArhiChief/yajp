@@ -36,9 +36,11 @@ obj_content ::= pair.
 obj_content ::= obj_content COMMA.
 obj_content ::= obj_content pair.
 
-key         ::= STRING(A). 			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_KEY; }
+pair_key    ::= STRING(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_KEY; }
 
-pair        ::= key COLON value. 		{ entity->token = NULL; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR; }
+pair_value  ::= COLON value.
+
+pair        ::= pair_key pair_value.		{ entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR; }
 
 
 arr_begin   ::= ABEGIN.				{ entity->token = NULL; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_ARRAY; }
