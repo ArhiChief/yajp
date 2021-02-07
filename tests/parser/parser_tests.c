@@ -20,8 +20,6 @@
 
 #include "test_common.h"
 
-#include "parser.h"
-
 /* test cases prototypes */
 static test_result_t yajp_parser_parse_test1(int argc, char **argv);
 

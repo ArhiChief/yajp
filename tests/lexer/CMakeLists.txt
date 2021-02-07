@@ -6,6 +6,8 @@ target_link_libraries(lexer_tests
         PRIVATE yajp::test_common yajp::yajp_lib
         )
 
+target_include_directories(lexer_tests PUBLIC ${PROJECT_BINARY_DIR}/src)
+
 add_test(NAME LexerTest1 COMMAND $<TARGET_FILE:lexer_tests> 1)
 add_test(NAME LexerTest2 COMMAND $<TARGET_FILE:lexer_tests> 2)
 add_test(NAME LexerTest3 COMMAND $<TARGET_FILE:lexer_tests> 3)

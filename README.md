@@ -44,17 +44,17 @@ TBD
 |------------------------|--------|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | YAJP_GENERATE_LEXER    | BOOL   | OFF            | Force CMake to generate new lexer. `re2c` should be installed                                                                                                                            |
 | YAJP_GENERATE_PARSER   | BOOL   | OFF            | Force CMake to generate new parser. `lemon` should be installed                                                                                                                          |
-| YAJP_TRACK_STREAM      | BOOL   | ON             | Track parsing stream. In case of error, line and collumn number with error will be returned. Not implemented for now.                                                                    |
-| YAJP_BUFFER_SIZE       | STRING | 32             | Size in bytes of buffers used to work with JSON. If value can't be fitted into buffer it will be extended enough to handle value and size will be multiplicable by **YAJP_BUFFER_SIZE**. | 
+| YAJP_TRACK_STREAM      | BOOL   | ON             | Track parsing stream. In case of error, line and column number with error will be returned. Not implemented for now.                                                                    |
+| YAJP_BUFFER_SIZE       | STRING | 32             | Size in bytes of buffers used to work with JSON. If value can't be fitted into buffer it will be extended enough to handle value and size will be multiplicands by **YAJP_BUFFER_SIZE**. | 
 
 ## Usage
 
 **YAJP** can be added as dependency to your CMake project as a subdirectory or as package obtained by `find-package`:
  - If **YAJP** is added to your project as a subproject:
 ```cmake
-include(<path/to/yajp/sources>)
+include(<path/to/yajp/dir>)
 ```
- - If yajp is installed to your sysroot than `find-package` cmake command can be used:
+ - If yajp is installed to your sysroot then `find-package` command can be used:
 ```cmake
 find_package(yajp REQUIRED)
 ```
@@ -64,80 +64,280 @@ After that, in can be linked with your targets like this:
 target_link_libraries(target_name PRIVATE yajp::yajp_lib)
 ```
 
-### Deserialization example
-For now, support is very limited and can handle only deserialization of plain object data structures. Here how it can be
-done:
+### Deserialization
+Structures and functions used to declare deserialization rules are defined in `yajp/deserialization.h`. The way is to 
+declare rules describing deserialization of each field in structure, called deserialization actions (`yajp_deserialization_action_t`).
 
+After all actions are initialized they can be used as parameters for initializing deserialization context. Context is 
+used as a container for deserialization actions. 
+
+General function to create deserialization action is defined like this:
 ```c
-#include <yajp/deserialization.h>
-#include <yajp/deserialization_routine.h> // yajp_set_int() is defined here
-
-#include <string.h>
-
-typedef struct {
-    int int_field1;
-    int short_field;
-} test_struct_t;
-
-static const yajp_deserialization_action_t actions[2];
-static const yajp_deserialization_ctx_t ctx; 
-
-static int init_deserialization_declarations() {
-    int ret;
-    
-    // declare rules actions what will describe how deserialization should go
-    ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(
-            test_struct_t,  // type of structure where deserializing field is stored
-            int_field1,     // name of field in deserializing structure
-            yajp_set_int, // pointer to function used to deserialize JSON value into structure field. 
-            &actions[0]     // pointer to initializing deserialization action
-            );
-
-    if (0 != ret) {
-        return ret;
-    }
-    
-    // in case if JSON field name is not equal to deserializing field name, this macro can be used 
-    ret = YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(
-            "int_field2",   // name of field in JSON stream
-            test_struct_t,  // type of structure where deserializing field is stored
-            short_field,    // name of field in deserializing structure
-            yajp_set_int, // pointer to function used to deserialize JSON value into structure field. 
-            &actions[0]     // pointer to initializing deserialization action
-            );
-
-    if (0 != ret) {
-        return ret;
-    }
-
-    ret = yajp_deserialization_ctx_init(actions, (sizeof(actions) / sizeof(actions[0])), &ctx);
-    
-    return ret;
-}
-
-int deserialize() {
-    const char *json = "{\"int_field1\":12345, \"short_field\":332}";
-    size_t json_size = strlen(json) * sizeof(*json);
-    yajp_deserialization_result_t ret;
-    test_struct_t result;
-
-    ret = init_deserialization_declarations();
-
-    if (0 != ret) {
-        ret = yajp_deserialize_json_string(json, json_size, &ctx, &result, NULL);
-    }
-    
-    return ret;
-}
+int yajp_deserialization_array_action_init(const char *field_name,
+                                           size_t name_size,
+                                           size_t field_offset,
+                                           size_t field_size,
+                                           yajp_deserialization_action_options_t options,
+                                           size_t counter_offset,
+                                           size_t final_dim_offset,
+                                           size_t rows_offset,
+                                           size_t elem_size,
+                                           size_t elems_offset,
+                                           yajp_value_setter_t setter,
+                                           yajp_deserialization_action_t *action
+                                           );
 ```
 
-### API Documentation
-**YAJP** provides next headers with definations of functions, structures, macros, etc:
- - `yajp/deserialization.h`. Provides interfaces for deserialization routines;
- - `yajp/deserialization_routines.h`. Provides functions what can be used to deserialize C structure fields from JSON values.
+Function is too generic and it's recommended to use macro wrappers how it's described in next sections.
 
-`yajp/deserialization.h` provides next definitions:
+#### Numbers and booleans deserialization
+Deserialization actions for numbers and booleans can be initialized by calling `YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT` or
+`YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT` function wrappers:
 
-// TODO!!
+```c
+#define YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, setter, action)
+```
+- `structure` - Type of structure where deserializing field is defined;
+- `field` - Name of deserializing field;
+- `setter` - pointer to function of type `yajp_value_setter_t` used to set convert string value in json to field type;
+- `action` - pointer to `yajp_deserialization_action_t` to store action.
+
+```c
+#define YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, setter, action)
+```
+- `json_field` - Name of field in JSON stream.
+- `structure` - Type of structure where deserializing field is defined;
+- `field` - Name of deserializing field;
+- `setter` - pointer to function of type `yajp_value_setter_t` used to set convert string value in json to field type;
+- `action` - pointer to `yajp_deserialization_action_t` to store action.
+
+Example of usage:
+```c
+typedef struct {
+    int integer_field;
+    int integer_field2;
+} test_struct_t;
+
+int result;
+
+result = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, integer_field, yajp_set_int, action_ptr);
+// in case if JSON field name is called different
+result = YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT("name", test_struct_t, integer_field, yajp_set_int, action2_ptr);
+```
+
+#### String deserialization
+Deserialization of string is same as deserialization of other values except two points. **YAJP** expect that string in 
+structure is null-terminated C string. Deserializing field can be defined as pointer to string or as array.
+`YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT` and `YAJP_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT` are used 
+to initialize deserialization actions for string fields.
+
+```c
+#define YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, setter, allocate, action)
+```
+- `structure` - Type of structure where deserializing field is defined;
+- `field` - Name of deserializing field;
+- `setter` - pointer to function of type `yajp_value_setter_t` used to set convert string value in json to field type;
+- `allocate` - pass `true` if memory for string should be allocated on heap and `false` if field is array;  
+- `action` - pointer to `yajp_deserialization_action_t` to store action.
+
+```c
+#define YAJP_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, setter, allocate, action)
+```
+- `json_field` - Name of field in JSON stream.
+- `structure` - Type of structure where deserializing field is defined;
+- `field` - Name of deserializing field;
+- `setter` - pointer to function of type `yajp_value_setter_t` used to set convert string value in json to field type;
+- `allocate` - pass `true` if memory for string should be allocated on heap and `false` if field is array;
+- `action` - pointer to `yajp_deserialization_action_t` to store action.
+
+Example of usage:
+```c
+typedef struct {
+    char *string;
+    char string2[30];
+} test_struct_t;
+
+int result;
+
+result = YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, string, yajp_set_int, true, action_ptr);
+
+result = YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, string2, yajp_set_int, false, action2_ptr);
+```
+
+#### Arrays deserialization
+      TBD
 
 
+#### Deserialization example. 
+```c
+#include <stdio.h>
+#include <yajp/deserialization.h>
+#include <yajp/deserialization_routine.h> // contains common setters
+
+// dynamic array
+typedef struct dyn_arr {
+    union {
+        void *elems;
+        dyn_arr_t *rows;
+    };
+    
+    size_t count;
+    bool final_dim;
+} dyn_arr_t;
+
+// fixed array of ints
+#define ARR_OF_INTS_CAP 10
+typedef struct arr_of_ints {
+    union {
+        int elems[ARR_OF_INTS_CAP];
+        arr_of_ints_t *rows;
+    };
+
+    size_t count;
+    bool final_dim;
+} arr_of_ints_t;
+
+typedef struct test_struct {
+    short           short_val;
+    int             int_val;
+    long int        long_int_val;
+    long long int   long_long_int_val;
+    float           float_val;
+    double          double_val;
+    long double     long_double_val;
+    bool            bool_val;
+    char[20]        string_val;         // string of fixed length. Ends with '\0'            
+    char            *dyn_string_val;    // variable length string. Ends with '\0'
+
+    dyn_arr_t       *dyn_arr_val1;      
+    dyn_arr_t       arr_val1;    
+    
+    arr_of_ints_t   *dyn_arr_val2;
+    arr_of_ints_t   arr_val2;
+    
+    dyn_arr_t       *strings_arr_val;
+
+    dyn_arr_t       *matrix_val;        // 2-dimension array
+    dyn_arr_t       *cube_val;          // 3-dimension array
+} test_struct_t;
+
+#define TEST_STRUCT_FIELDS_CNT  17
+static yajp_deserialization_action_t    deserialization_actions[TEST_STRUCT_FIELDS_CNT];
+static yajp_deserialization_ctx_t       deserialization_context;
+
+// function is quite big, but it can be called once and result can be used multiple times.
+static int init_deserialization_context() {
+    int result;
+    
+    // for each field we should declare deserialization action, otherwise field will not be deserialized
+    
+    result = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(
+            test_struct_t,                // deserializing structure type
+            short_val,                    // field in deserializing structure
+            yajp_set_short,               // value setter
+            &deserialization_actions[0]   // pointer to holding structure
+    );
+                                                              
+    if (0 != result) { return result; }
+
+    result = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, int_val, yajp_set_int, &deserialization_actions[1]);
+    if (0 != result) { return result; }
+
+    result = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, long_int_val, yajp_set_long_int, &deserialization_actions[2]);
+    if (0 != result) { return result; }
+
+    result = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, long_int_val, yajp_set_long_int, &deserialization_actions[3]);
+    if (0 != result) { return result; }
+
+    result = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, long_long_int_val, yajp_set_long_long_int, &deserialization_actions[4]);
+    if (0 != result) { return result; }
+
+    result = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, float_val, yajp_set_float, &deserialization_actions[5]);
+    if (0 != result) { return result; }
+
+    result = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, double_val, yajp_set_double, &deserialization_actions[6]);
+    if (0 != result) { return result; }
+
+    result = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, long_double_val, yajp_set_long_double, &deserialization_actions[7]);
+    if (0 != result) { return result; }
+
+    result = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, bool_val, yajp_set_bool_val, &deserialization_actions[8]);
+    if (0 != result) { return result; }
+    
+    // string values is one of special case what require additional info to be provided
+    result = YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(
+            test_struct_t,              // deserializing structure type
+            string_val,                 // field in deserializing structure
+            yajp_set_string,            // value setter
+            false,                      // describes whenever heap allocation for sting is needed. In this case, "string_val" is array and no allocation needed  
+            &deserialization_actions[8] // pointer to holding structure
+    );
+    if (0 != result) { return result; }
+
+    result = YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, string_val, dyn_string_val, true, &deserialization_actions[9]
+    );
+    if (0 != result) { return result; }
+    
+    // arrays are also a special case. See section Array Deserialization for details
+    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(
+            test_struct_t,                  // deserializing structure type
+            dyn_arr_val1,                   // field in deserializing structure
+            dyn_arr_t,                      // type of structure used to hold array
+            count,                          // name of field in array holding structure, used to count elements
+            final_dim,                      // name of field in array holding structure, used to show what there is no more rows
+            rows,                           // name of field in array holding structure, used to hold rows in array    
+            elems,                          // name of field in array holding structure, used to hold array items
+            int,                            // type of array element
+            true,                           // describes whenever heap allocation for array handling structure is needed
+            true,                           // describes whenever heap allocation for array elements is needed
+            yajp_set_long_int,              // value setter
+            &deserialization_actions[10]    // pointer to holding structure
+    );
+    if (0 != result) { return result; }
+
+    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, arr_val1, dyn_arr_t, count, final_dim, rows, elems, int, false, true, yajp_set_long_int, &deserialization_actions[11]);
+    if (0 != result) { return result; }
+
+    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, dyn_arr_val2, arr_of_ints_t, count, final_dim, rows, elems, int, true, false, yajp_set_long_int, &deserialization_actions[12]);
+    if (0 != result) { return result; }
+
+    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, arr_val2, arr_of_ints_t, count, final_dim, rows, elems, int, false, false, yajp_set_long_int, &deserialization_actions[13]);
+    if (0 != result) { return result; }
+
+    // yajp expects what arrays of strings are represented as array of pointers to strings  
+    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, strings_arr_val, dyn_arr_t, count, final_dim, rows, elems, char*, true, true, yajp_set_string, &deserialization_actions[13]);
+    if (0 != result) { return result; }
+    
+    // yajp don't differentiate arrays, matrix of cubes. Unified structure is used to cover all cases
+    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, matrix_val, dyn_arr_t, count, final_dim, rows, elems, int, false, true, yajp_set_long_int, &deserialization_actions[11]);
+    if (0 != result) { return result; }
+
+    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, cube_val, dyn_arr_t, count, final_dim, rows, elems, int, false, true, yajp_set_long_int, &deserialization_actions[11]);
+    if (0 != result) { return result; }
+    
+    result = yajp_deserialization_ctx_init(deserialization_actions, TEST_STRUCT_FIELDS_CNT, &deserialization_context);
+    return result;
+}
+
+int main(int argc, char **argv) {
+    test_struct_t test_struct;
+    yajp_deserialization_result result;
+    char *result_str;
+    
+    if (0 != init_deserialization_context()) {
+        perror("Deserialization context initialization failed");
+        return -1;
+    }
+
+    result = yajp_deserialize_json_string(js, sizeof(js), &deserialization_context, &test_struct, NULL);
+
+    result_str = yajp_deserialization_result_status_to_str(&result);
+    
+    printf("Deserialization finished with: %s\n", result_str);
+    free(result_str);
+    
+    return (result.status == YAJP_DESERIALIZATION_RESULT_STATUS_OK) 
+            ? 0 
+            : -1;
+}
+```
