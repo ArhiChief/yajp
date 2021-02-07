@@ -170,7 +170,7 @@ yajp_deserialization_result_t yajp_deserialize_json_stream(FILE *json, const yaj
 
 static yajp_deserialization_result_status_t yajp_deserialize(yajp_deserialization_data_t *data,
                                                              const yajp_deserialization_ctx_t *ctx,
-                                                             void *deserializing_struct) {
+                                                             void *address) {
 #define TOKENS_CNT 3
     yajp_deserialization_result_status_t result = YAJP_DESERIALIZATION_RESULT_STATUS_OK;
     yajp_lexer_token_t tokens[TOKENS_CNT];
@@ -194,7 +194,7 @@ static yajp_deserialization_result_status_t yajp_deserialize(yajp_deserializatio
         yajp_parser_parse(data->parser, last_token, current_token, &recognized_entity);
 
         if (YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_KEY == recognized_entity.type) {
-            result = yajp_deserialize_value(data, ctx, recognized_entity.token, deserializing_struct);
+            result = yajp_deserialize_value(data, ctx, recognized_entity.token, address);
             if (YAJP_DESERIALIZATION_RESULT_STATUS_OK != result) {
                 goto end;
             }
@@ -440,6 +440,7 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
     yajp_parser_recognized_entity_t recognized_entity;
     int i = 0, setter_result;
     size_t row_shift = 0;
+    void *elem_address;
 
     size_t *count = address + action->option_params.array_field.counter_offset;
     bool *final_dim = address + action->option_params.array_field.final_dym_offset;
@@ -459,10 +460,30 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
 
         if (YAJP_TOKEN_ABEGIN == current_token->token) {
             *final_dim = false;
+
+            elem_address = *(void **)(address + action->option_params.array_field.rows_offset);
+            elem_address = realloc(elem_address, row_shift + action->size);
+
+            if (NULL == elem_address) {
+                result = YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
+                goto end;
+            }
+
+            memset(elem_address + row_shift, 0, action->size);
+
+            *(void **)(address + action->option_params.array_field.rows_offset) = elem_address;
+            elem_address += row_shift;
+
+            result =  yajp_parse_array_value_internal(data, name, action, array_item_additional_size, elem_address);
+            if (result != YAJP_DESERIALIZATION_RESULT_STATUS_OK) {
+                goto end;
+            } 
+
+            row_shift += action->size;
+            (*count)++;
         }
 
         if (YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE == recognized_entity.type) {
-            void *elem_address;
             if (action->option_params.array_field.allocate_elems) {
                 elem_address = *(void **)(address + action->option_params.array_field.elems_offset);
                 elem_address = realloc(elem_address, row_shift + action->option_params.array_field.elem_size);
