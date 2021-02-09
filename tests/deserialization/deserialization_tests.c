@@ -34,6 +34,8 @@ static test_result_t yajp_deserialize_json_test_array_of_primitives_field();
 static test_result_t yajp_deserialize_json_test_array_of_strings_field();
 static test_result_t yajp_deserialize_json_test_matrix_of_primitives();
 static test_result_t yajp_deserialize_json_test_cube_of_primitives();
+static test_result_t yajp_deserialize_json_test_inherited_object();
+static test_result_t yajp_deserialize_json_test_array_of_objects();
 
 
 /* test suite declaration and initialization */
@@ -43,7 +45,9 @@ const test_case_t test_suite[] = {
         REGISTER_TEST_CASE(yajp_deserialize_json_test_array_of_primitives_field, 3, yajp_deserialize_json_string, "where JSON values are arrays of primitives and some of them need allocation"),
         REGISTER_TEST_CASE(yajp_deserialize_json_test_array_of_strings_field, 4, yajp_deserialize_json_string, "where JSON values are arrays of strings and some of them need allocation"),
         REGISTER_TEST_CASE(yajp_deserialize_json_test_matrix_of_primitives, 5, yajp_deserialize_json_string, "where JSON values are 2-dimension array of primitive values"),
-        REGISTER_TEST_CASE(yajp_deserialize_json_test_cube_of_primitives, 5, yajp_deserialize_json_string, "where JSON values are 3-dimensions array of primitive values"),
+        REGISTER_TEST_CASE(yajp_deserialize_json_test_cube_of_primitives, 6, yajp_deserialize_json_string, "where JSON values are 3-dimensions array of primitive values"),
+        REGISTER_TEST_CASE(yajp_deserialize_json_test_inherited_object, 7, yajp_deserialize_json_string, "where JSON values are objects"),
+        REGISTER_TEST_CASE(yajp_deserialize_json_test_array_of_objects, 8, yajp_deserialize_json_string, "where JSON values are arrays of objects")
 };
 
 /* test suite tests count declaration and initialization */
@@ -155,21 +159,21 @@ static test_result_t yajp_deserialize_json_test_string_fields() {
 }
 
 // structure will represent our dynamic array
-typedef struct test_struct_arr test_struct_arr_t;
-struct test_struct_arr {
+typedef struct array_handle array_handle_t;
+struct array_handle {
     union {
         void *elems;
-        test_struct_arr_t *rows;
+        array_handle_t *rows;
     };
     bool final_dim;
     size_t count;
 };
 
-typedef struct test_struct_arr_10_ints test_struct_arr_10_ints_t;
-struct test_struct_arr_10_ints {
+typedef struct array_of_10_ints array_of_10_ints_t;
+struct array_of_10_ints {
     union {
         int elems[10];
-        test_struct_arr_10_ints_t *rows;
+        array_of_10_ints_t *rows;
     };
     bool final_dim;
     size_t count;
@@ -177,10 +181,10 @@ struct test_struct_arr_10_ints {
 
 static test_result_t yajp_deserialize_json_test_array_of_primitives_field() {
     typedef struct {
-        test_struct_arr_t arr1;
-        test_struct_arr_t *arr2;
-        test_struct_arr_10_ints_t arr3;
-        test_struct_arr_10_ints_t *arr4;
+        array_handle_t arr1;
+        array_handle_t *arr2;
+        array_of_10_ints_t arr3;
+        array_of_10_ints_t *arr4;
 
     } test_struct_t;
 
@@ -198,23 +202,23 @@ static test_result_t yajp_deserialize_json_test_array_of_primitives_field() {
     yajp_deserialization_action_t actions[4] = { 0 };
     test_struct_t test_struct = { 0 };
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr1, test_struct_arr_t, count,
+    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr1, array_handle_t, count,
                                                                     final_dim, rows, elems, int, false, true,
                                                                     yajp_set_int, &actions[0]);
     test_is_equal(ret, 0, "Action initialization failed");
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr2, test_struct_arr_t, count,
+    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr2, array_handle_t, count,
                                                                     final_dim, rows, elems, int, true, true,
                                                                     yajp_set_int, &actions[1]);
     test_is_equal(ret, 0, "Action initialization failed");
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr3, test_struct_arr_10_ints_t, count,
+    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr3, array_of_10_ints_t, count,
                                                                     final_dim, rows, elems, int, false, false,
                                                                     yajp_set_int, &actions[2]);
 
     test_is_equal(ret, 0, "Action initialization failed");
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr4, test_struct_arr_10_ints_t, count,
+    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr4, array_of_10_ints_t, count,
                                                                     final_dim, rows, elems, int, true, false,
                                                                     yajp_set_int, &actions[3]);
     test_is_equal(ret, 0, "Action initialization failed");
@@ -255,7 +259,7 @@ static test_result_t yajp_deserialize_json_test_array_of_strings_field() {
 #define str4 "test string 4"
 
     typedef struct {
-        test_struct_arr_t field;
+        array_handle_t field;
     } test_struct_t;
 
     static const char js[] = "{ \"field\":[\""str1"\",\""str2"\",\""str3"\",\""str4"\"]}";
@@ -272,7 +276,7 @@ static test_result_t yajp_deserialize_json_test_array_of_strings_field() {
     yajp_deserialization_action_t actions[1];
     test_struct_t test_struct = { 0 };
 
-    ret = YAJP_ARRAY_OF_STRING_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, field, test_struct_arr_t, count,
+    ret = YAJP_ARRAY_OF_STRING_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, field, array_handle_t, count,
                                                                  final_dim, rows, elems, char *, false, true,
                                                                  yajp_set_string, &actions[0]);
     test_is_equal(ret, 0, "Action initialization failed");
@@ -309,7 +313,7 @@ static test_result_t yajp_deserialize_json_test_matrix_of_primitives() {
 #define rows_cnt 5
 #define column_cnt 5
     typedef struct {
-        test_struct_arr_t *arr;
+        array_handle_t *arr;
     } test_struct_t;
 
     static const char js[] = "{ \"arr\":[[10,30,30,12,1],[-4,5,0,0,73],[34,-6,-3,4,62],[1,2,3,4,5],[10,9,8,7,6]]}";
@@ -330,7 +334,7 @@ static test_result_t yajp_deserialize_json_test_matrix_of_primitives() {
     int i, j, ret;
     int test_arr_elem, test_struct_elem;
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr, test_struct_arr_t, count,
+    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr, array_handle_t, count,
                                                                     final_dim, rows, elems, int, true, true,
                                                                     yajp_set_int, &actions[0]);
     test_is_equal(ret, 0, "");
@@ -367,7 +371,7 @@ static test_result_t yajp_deserialize_json_test_matrix_of_primitives() {
 
 static test_result_t yajp_deserialize_json_test_cube_of_primitives() {
     typedef struct {
-        test_struct_arr_t *arr;
+        array_handle_t *arr;
     } test_struct_t;
 
     static const char js[] = "{\"arr\":[[[1,2,3],[4,5,6],[7,8,9]],[[10,11,12],[13,14,15],[16,17,18]],[[19,20,21],[22,23,24],[25,26,27]]]}";
@@ -398,7 +402,7 @@ static test_result_t yajp_deserialize_json_test_cube_of_primitives() {
     int i, j, k, test_arr_elem, test_struct_elem, ret;
     test_struct_t test_struct = { .arr = NULL };
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr, test_struct_arr_t, count,
+    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr, array_handle_t, count,
                                                                     final_dim, rows, elems, int, true, true,
                                                                     yajp_set_int, &actions[0]);
     test_is_equal(ret, 0, "");
@@ -436,4 +440,53 @@ static test_result_t yajp_deserialize_json_test_cube_of_primitives() {
 #undef dimI
 #undef dimJ
 #undef dimK
+}
+
+typedef struct {
+    int f1;
+    array_handle_t f2;
+} inner_object_t;
+
+static test_result_t yajp_deserialize_json_test_inherited_object() {
+    typedef struct {
+        inner_object_t f1;
+        inner_object_t *f2;
+    } test_struct_t;
+
+    static const char js[] = "{\"obj1\":{\"f1\":10,\"f2\":[1,2,3]},\"obj2\":{\"f1\":-2,\"f2\":[-1,-2,-3]}}";
+    static const size_t js_size = sizeof(js);
+
+    yajp_deserialization_ctx_t ctx, inner_obj_ctx;
+    yajp_deserialization_action_t actions[2], inner_obj_actions[2];
+    yajp_deserialization_result_t dres;
+    int ret;
+
+    test_struct_t test_struct;
+
+    ret = yajp_deserialization_ctx_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
+    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+
+    return TEST_RESULT_PASSED;
+}
+
+static test_result_t yajp_deserialize_json_test_array_of_objects() {
+    typedef struct {
+        array_handle_t arr1;
+    } test_struct_t;
+
+    static const char js[] = "{\"arr1\":[{\"f1\":10,\"f2\":[1,2,3]},{\"f1\":-10,\"f2\":[-1,-2,-3]},{\"f1\":12,\"f2\":[11,21,31]}]}";
+    static const size_t js_size = sizeof(js);
+
+    yajp_deserialization_ctx_t ctx, inner_obj_ctx;
+    yajp_deserialization_action_t actions[1], inner_obj_actions[2];
+    yajp_deserialization_result_t dres;
+    int ret;
+
+    test_struct_t test_struct;
+
+    ret = yajp_deserialization_ctx_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
+    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+
+
+    return TEST_RESULT_PASSED;
 }

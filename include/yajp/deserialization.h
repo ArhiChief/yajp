@@ -100,6 +100,20 @@ struct yajp_deserialization_action {
             size_t final_dym_offset;                // offset of final_dim flag
             size_t elem_size;                       // size of array element
         } array_field;                              // for array fields
+        struct {
+            const yajp_deserialization_ctx_t *ctx;  // deserialization context
+            bool allocate;                          // memory allocation required for this deserializing field
+        } object_filed;
+        struct {
+            const yajp_deserialization_ctx_t *ctx;  // deserialization context
+            bool allocate;                          // allocation of array holder needed
+            bool allocate_elems;                    // allocation for array values needed
+            size_t counter_offset;                  // offset of counter
+            size_t rows_offset;                     // offset of rows array
+            size_t elems_offset;                    // offset of array values
+            size_t final_dym_offset;                // offset of final_dim flag
+            size_t elem_size;                       // size of array element
+        } array_of_objects_field;
     } option_params;                                // deserialization options data
 };
 
@@ -402,7 +416,7 @@ int yajp_deserialization_array_action_init(const char *field_name,
  * @param[in]   field
  * @param[in]   setter
  * @param[in]   allocate
- * @param[out]  result
+ * @param[out]  action
  *
  * @return
  *
@@ -570,5 +584,72 @@ int yajp_deserialization_array_action_init(const char *field_name,
         setter,                                                                                                                                                                                          \
         action                                                                                                                                                                                           \
     )
+
+/**
+ * Convenient initialization of deserialization action for object field
+ *
+ * @param[in]   structure
+ * @param[in]   field
+ * @param[in]   ctx
+ * @param[in]   allocate
+ * @param[out]  action
+ *
+ * @note    Use this macro for deserialization of object field. Macro expects that name of field in
+ *          deserializing structure and JSON stream are same.
+ */
+#define YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, ctx, allocate, action)
+
+/**
+ * Convenient initialization of deserialization action for object field
+ *
+ * @param[in]   json_field
+ * @param[in]   structure
+ * @param[in]   field
+ * @param[in]   ctx
+ * @param[in]   allocate
+ * @param[out]  action
+ *
+ */
+#define YAJP_OBJECT_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, ctx, allocate, action)
+
+/**
+ * Convenient initialization of deserialization action for array of object field
+ *
+ * @param[in]   structure
+ * @param[in]   field
+ * @param[in]   field_type
+ * @param[in]   counter
+ * @param[in]   final_dim
+ * @param[in]   rows
+ * @param[in]   elems
+ * @param[in]   elem_type
+ * @param[in]   allocate
+ * @param[in]   allocate_elem
+ * @param[in]   ctx
+ * @param[out]  action
+ *
+ * @note    Use this macro for deserialization of array of object field. Macro expects that name of field in
+ *          deserializing structure and JSON stream are same.
+ */
+#define YAJP_ARRAY_OF_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, ctx, action)
+
+/**
+ * Convenient initialization of deserialization action for array of object field
+ *
+ * @param[in]   json_field
+ * @param[in]   structure
+ * @param[in]   field
+ * @param[in]   field_type
+ * @param[in]   counter
+ * @param[in]   final_dim
+ * @param[in]   rows
+ * @param[in]   elems
+ * @param[in]   elem_type
+ * @param[in]   allocate
+ * @param[in]   allocate_elem
+ * @param[in]   ctx
+ * @param[out]  action
+ */
+#define YAJP_ARRAY_OF_OBJECT_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, ctx, action)
 
 #endif // YAJP_DESERIALIZE_H
