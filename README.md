@@ -165,14 +165,71 @@ result = YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, string2, y
 ```
 
 #### Arrays deserialization
-      TBD
+JSON arrays are quite complex structures. Type of array elements, sizes and amount of dimensions are unknown for parsers 
+because of JSON array nature till whole array is parsed. To handle this scenario **YAJP** represents arrays as dynamic 
+structures. Only one dimension array can be fully stored in deserialized structure. 2 or more dimensional array will be allocated on heap.
 
-
-#### Deserialization example. 
+Generally, array of arbitrary size can be declared like this: 
 ```c
-#include <stdio.h>
-#include <yajp/deserialization.h>
-#include <yajp/deserialization_routine.h> // contains common setters
+typedef struct array_holder array_holder_t
+
+struct array_holder {
+    void *elems;
+    array_holder_t *rows;
+    size_t count;
+    bool final_dim;
+};
+```
+To reduce space usage `*elems` and `*rows` can be placed into `union` and pointer to array elements (`*elems`) can be 
+replaced with array if maximum amount and type of array elements are known:
+```c
+#define ARRAY_HOLDER_CAPACITY 10
+typedef struct array_holder array_holder_t
+
+struct array_holder {
+    union {
+        int elems[ARRAY_HOLDER_CAPACITY];
+        array_holder_t *rows;
+    };
+    size_t count;
+    bool final_dim;
+};
+```
+Fields:
+- `elems` - pointer to array elements;
+- `rows` - pointer to rows of next dimension in case if array has more than one dimension;
+- `count` - .Counter. Shows amount of elements in region pointed by `elemns` or `row`;
+- `final_dim` - Final dimension flag. Shows that this structure is last dimension and stores elements and not rows.
+
+Deserialization actions for arrays are initialized using next function wrappers:
+```c
+#define YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, action)
+
+#define YAJP_ARRAY_OF_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, action)
+
+#define YAJP_ARRAY_OF_STRING_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, action)
+
+#define YAJP_ARRAY_OF_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, setter, action)
+```
+- `json_field` - Name of field in JSON stream;
+- `structure` - Type of structure where deserializing field is defined;
+- `field` - Name of deserializing field;
+- `field_type` - Type of array handling field;
+- `counter` - Name of field in array handler used as counter;
+- `final_dym` - Name of field in array handler used as final dimension;
+- `rows` - Name of field in array handler used to store rows in multidimensional array;
+- `elems` - Name of field in array handler used to store array element;
+- `elem_type` - type of elements handled by array;
+- `allocate` - pass `true` if memory for array holder should be allocated on heap and `false` if handler is nested;
+- `allocate_elems` - pass `true`, if `elems` is array and `false` overvise.
+- `setter` - pointer to function of type `yajp_value_setter_t` used to set convert string value in json to field type;
+- `action` - pointer to `yajp_deserialization_action_t` to store action.
+
+`YAJP_ARRAY_OF_STRING_FIELD_DESERIALIZATION_ACTION_INIT` and `YAJP_ARRAY_OF_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT` 
+are used when array should handle strings.
+
+Example of usage:
+```c
 
 // dynamic array
 typedef struct dyn_arr {
@@ -186,6 +243,48 @@ typedef struct dyn_arr {
 } dyn_arr_t;
 
 // fixed array of ints
+#define ARR_OF_INTS_CAP 10
+typedef struct arr_of_ints {
+    union {
+        int elems[ARR_OF_INTS_CAP];
+        arr_of_ints_t *rows;
+    };
+
+    size_t count;
+    bool final_dim;
+} arr_of_ints_t;
+
+typedef struct test_struct {
+    dyn_arr_t       arr_val1;
+    arr_of_ints_t   *dyn_arr_val2;
+};
+
+int result;
+
+
+result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, arr_val1, dyn_arr_t, count, final_dim, rows, elems, int, false, true, yajp_set_long_int, action1);
+
+result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, dyn_arr_val2, arr_of_ints_t, count, final_dim, rows, elems, int, true, false, yajp_set_long_int, action2);
+```
+
+#### Deserialization example
+```c
+#include <stdio.h>
+#include <yajp/deserialization.h>
+#include <yajp/deserialization_routine.h> // contains common setters
+
+// dynamic array. this structure is used to hold dynamic array of arbitrary size
+typedef struct dyn_arr {
+    union {
+        void *elems;    // pointer to array elements
+        dyn_arr_t *rows; // pointer to rows in case if array have more than 1 dimension
+    };
+    
+    size_t count;   // amount of elements in `elems` or `rows`
+    bool final_dim; // flag used to show, that structure handle final dimension and no more dimensions available
+} dyn_arr_t;
+
+// fixed array of ints. this structure is used to hold array of ints (10 maximum)  
 #define ARR_OF_INTS_CAP 10
 typedef struct arr_of_ints {
     union {
