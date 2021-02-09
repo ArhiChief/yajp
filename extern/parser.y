@@ -2,7 +2,7 @@
 %name yajp_parser
 
 // prefix will be added to the front of each terminal
-%token_prefix YAJP_TOKEN_
+%token_prefix YAJP_PARSER_TOKEN_
 
 // additional include directives
 %include {
@@ -16,19 +16,11 @@
 %token_type { const yajp_lexer_token_t * }
 
 // fourth argument for yajp_parser_parse function
-%extra_argument { yajp_parser_recognized_action_t *action }
+%extra_argument { yajp_parser_recognized_entity_t *entity }
 
-/*
- * Grammar based on https://web.cs.dal.ca/~sjackson/bitJson/JSON.html with
- * additional changes which are necessary for our needs.
- */
+%start_symbol start
 
-
-// starting symbol of grammar
-%start_symbol root
-
-root        ::= obj.
-root        ::= arr.
+start 	    ::= obj.
 
 obj         ::= OBEGIN obj_content OEND.
 obj         ::= OBEGIN OEND.
@@ -37,19 +29,27 @@ obj_content ::= pair.
 obj_content ::= obj_content COMMA.
 obj_content ::= obj_content pair.
 
-pair        ::= STRING(A) COLON value(B).	{ action->field = A; action->value = B; action->is_recognized = true; }
+pair_key    ::= STRING(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_KEY; }
 
-arr         ::= ABEGIN arr_content AEND.
-arr         ::= ABEGIN AEND.
+pair_value  ::= COLON value.
+
+pair        ::= pair_key pair_value.		{ entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR; }
+
+arr_begin   ::= ABEGIN.				{ entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_ABEGIN; }
+arr_end     ::= AEND.				{ entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_AEND; }
+
+arr         ::= arr_begin arr_content arr_end.
+arr         ::= arr_begin arr_end.
 
 arr_content ::= value.
 arr_content ::= arr_content COMMA.
 arr_content ::= arr_content value.
 
-
 value       ::= obj.
 value       ::= arr.
-value       ::= STRING.          {  }
-value       ::= BOOLEAN.         {  }
-value       ::= NUMBER.          {  }
-value       ::= NULL.            {  }
+value       ::= STRING(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
+value       ::= BOOLEAN(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
+value       ::= NUMBER(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
+value       ::= NULL(A).			{ entity->token = A; entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE; }
+
+

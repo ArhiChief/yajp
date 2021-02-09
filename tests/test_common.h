@@ -38,7 +38,7 @@ typedef enum {
 /**
  *  Declaration of method what is used to execute test case
  */
-typedef test_result_t (*test_method_t)(int argc, char **argv);
+typedef test_result_t (*test_method_t)();
 
 /**
  * Defines test case of test suite
@@ -47,9 +47,6 @@ typedef struct {
     const char const *name;         /* Short name of the test */
     const char const *description;  /* Test description */
     test_method_t method;           /* Pointer to function what will execute test */
-
-    int argc;                       /* Amount arguments in argv */
-    char **argv;                    /* Arguments passed to test method */
 } test_case_t;
 
 /**
@@ -64,9 +61,7 @@ extern const test_case_t test_suite[];
 #define REGISTER_TEST_CASE(test, test_num, tested_func, test_desc) {            \
     .name = FUNC_NAME(tested_func)" test "#test_num,                            \
     .description = "Testing execution of "FUNC_NAME(tested_func)" "test_desc,   \
-    .method = test,                                                             \
-    .argc = 0,                                                                  \
-    .argv = NULL                                                                \
+    .method = test                                                              \
 }
 /**
  * Universal macro for testing expressions
@@ -119,6 +114,23 @@ extern const test_case_t test_suite[];
 #define test_is_equal(a, b, errmsg, ...) do { test_expression(((a) == (b)), errmsg, ##__VA_ARGS__); } while(0)
 
 /**
+ * Test two parameters for equality with precision
+ *
+ *  @param a[in]        Left argument
+ *  @param b[in]        Right argument
+ *  @param p[in]        Precision
+ *  @param errmsg[in]   Format string to be printed in case of negative test
+ *  @param ...[in]      Arguments handled by errmsg
+ *
+ *  @return     @see test_expression definition
+ */
+#define test_is_equal_prec(a, b, p, errmsg, ...) do { test_expression(((((a) - (b)) < (p)) || (((b) - (a)) < (p))), errmsg, ##__VA_ARGS__); } while(0)
+
+#define FLOAT_PRECISION         0.0001
+#define DOUBLE_PRECISION        0.000001
+#define LONG_DOUBLE_PRECISION   0.00000001
+
+/**
  *  Test two parameters for non equality
  *  @param a[in]        Left argument
  *  @param b[in]        Right argument
@@ -147,7 +159,7 @@ extern const test_case_t test_suite[];
  *
  *  @return     @see test_expression definition
  */
-#define test_is_true(val, errmsg, ...) do { test_expression(((val) == (false)), errmsg, ##__VA_ARGS__); } while(0)
+#define test_is_true(val, errmsg, ...) do { test_expression(((val) == (true)), errmsg, ##__VA_ARGS__); } while(0)
 
 /**
  *  Test that left argument is less than right
@@ -194,8 +206,6 @@ extern const test_case_t test_suite[];
 #define test_is_gte(a, b, errmsg, ...) do { test_expression(((a) >= (b)), errmsg, ##__VA_ARGS__); } while(0)
 
 
-#define UNUSED __attribute__ ((unused))
-
 /**
  * Wraps passed token with quotes converting it into constant string
  * @param val[in]   Item to wrap with quotes
@@ -210,6 +220,17 @@ extern const test_case_t test_suite[];
  */
 #define FUNC_NAME(val) STRINGIFY(val)"()"
 
-#define str_size_without_null(str) ((ARR_LEN(str) - 1) * sizeof(*(str)))
+/**
+ * Returns length of array
+ */
 #define ARR_LEN(a) (sizeof(a))/(sizeof(*a))
+
+/*
+ *
+ */
+
+#ifndef str_size_without_null
+    #define str_size_without_null(str) ((ARR_LEN(str) - 1) * sizeof(*(str)))
+#endif
+
 #endif //YAJP_TEST_COMMON_H

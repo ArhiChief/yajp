@@ -43,14 +43,23 @@
 void yajp_parser_trace(FILE *TraceFILE, char *zTracePrompt);
 #endif
 
+typedef enum yajp_parser_recognized_entity_type {
+    YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_NONE = 0,
+    YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE = 1,
+    YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR,
+    YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_ABEGIN,
+    YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_AEND,
+    YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_OBJECT,
+    YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_KEY,
+} yajp_parser_recognized_entity_type_t;
+
 /**
  * Recognized parser actions. Retur
  */
-typedef struct {
-    bool is_recognized;
-    const yajp_lexer_token_t *field;
-    const yajp_lexer_token_t *value;
-} yajp_parser_recognized_action_t;
+typedef struct yajp_parser_recognized_entity {
+    const yajp_lexer_token_t *token;
+    yajp_parser_recognized_entity_type_t type;
+} yajp_parser_recognized_entity_t;
 
 /**
  * \brief   Initialize a new parser that has already been allocated
@@ -89,9 +98,9 @@ void yajp_parser_release(void *yyp, void (*freeProc)(void *));
  * \param[in]   yyp         The parser
  * \param[in]   yymajor     The major token code number
  * \param       yyminor     The value for the token.
- * \param[out]  action      Recognized action. If value is YAJP_PARSER_RECOGNIZED_ACTION_NONE more tokens required
+ * \param[out]  entity      Recognized entity. If value is YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_NONE more tokens required
  */
-void yajp_parser_parse(void *yyp, int yymajor, const yajp_lexer_token_t *yyminor, yajp_parser_recognized_action_t *action);
+void yajp_parser_parse(void *yyp, int yymajor, const yajp_lexer_token_t *yyminor, yajp_parser_recognized_entity_t *entity);
 
 /**
  * \brief   Return the fallback token corresponding to canonical token
