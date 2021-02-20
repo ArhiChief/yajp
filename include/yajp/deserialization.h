@@ -320,6 +320,52 @@ int yajp_deserialization_array_action_init(const char *field_name,
                                            );
 
 /**
+ * Generic function to initialize deserialization action for inherited objects
+ *
+ * @param field_name
+ * @param name_size
+ * @param field_offset
+ * @param field_size
+ * @param options
+ * @param ctx
+ * @param action
+ * @return
+ */
+int yajp_deserialization_object_action_init(const char *field_name,
+                                            size_t name_size,
+                                            size_t field_offset,
+                                            size_t field_size,
+                                            yajp_deserialization_action_options_t options,
+                                            const yajp_deserialization_ctx_t *ctx,
+                                            yajp_deserialization_action_t *action
+                                            );
+
+/**
+ *
+ * @param field_name
+ * @param name_size
+ * @param field_offset
+ * @param field_size
+ * @param options
+ * @param ctx
+ * @param action
+ * @return
+ */
+int yajp_deserialization_array_object_action_init(const char *field_name,
+                                                  size_t name_size,
+                                                  size_t field_offset,
+                                                  size_t field_size,
+                                                  yajp_deserialization_action_options_t options,
+                                                  size_t counter_offset,
+                                                  size_t final_dim_offset,
+                                                  size_t rows_offset,
+                                                  size_t elem_size,
+                                                  size_t elems_offset,
+                                                  const yajp_deserialization_ctx_t *ctx,
+                                                  yajp_deserialization_action_t *action
+                                                  );
+
+/**
  * Calculates size of constant string without leading '\0' character.
  *
  * @param[in]   str Constant string
@@ -597,7 +643,16 @@ int yajp_deserialization_array_action_init(const char *field_name,
  * @note    Use this macro for deserialization of object field. Macro expects that name of field in
  *          deserializing structure and JSON stream are same.
  */
-#define YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, ctx, allocate, action)
+#define YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, ctx, allocate, action)             \
+yajp_deserialization_object_action_init(#field,                                                                        \
+        string_size_without_null(#field),                                                                              \
+        offsetof(structure, field),                                                                                    \
+        sizeof(field_type),                                                                                            \
+        YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_OBJECT |                                                              \
+            ((allocate) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE),    \
+        ctx,                                                                                                           \
+        action                                                                                                         \
+        )
 
 /**
  * Convenient initialization of deserialization action for object field

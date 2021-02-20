@@ -35,9 +35,9 @@ typedef struct yajp_deserialization_data {
 } yajp_deserialization_data_t;
 
 // function prototypes
-static yajp_deserialization_result_status_t yajp_deserialize(yajp_deserialization_data_t *data,
-                                                             const yajp_deserialization_ctx_t *ctx,
-                                                             void *deserializing_struct);
+static yajp_deserialization_result_status_t yajp_parse(yajp_deserialization_data_t *data,
+                                                       const yajp_deserialization_ctx_t *ctx,
+                                                       void *address);
 
 static yajp_deserialization_result_status_t yajp_deserialize_value(yajp_deserialization_data_t *data,
                                                                    const yajp_deserialization_ctx_t *ctx,
@@ -63,6 +63,10 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
                                                                    const yajp_deserialization_action_t *action,
                                                                    size_t array_item_additional_size,
                                                                    void *base_address);
+
+static yajp_deserialization_result_status_t yajp_parse_object_value(yajp_deserialization_data_t *data,
+                                                                     const yajp_deserialization_action_t *action,
+                                                                     void *base_address);
 
 yajp_deserialization_result_t yajp_deserialize_json_string(const char *json, size_t json_size,
                                                            const yajp_deserialization_ctx_t *ctx,
@@ -102,7 +106,7 @@ yajp_deserialization_result_t yajp_deserialize_json_string(const char *json, siz
     deserialization_data.parser = parser;
     deserialization_data.user_data = user_data;
 
-    deserialization_result.status = yajp_deserialize(&deserialization_data, ctx, deserializing_struct);
+    deserialization_result.status = yajp_parse(&deserialization_data, ctx, deserializing_struct);
 
 #ifdef YAJP_TRACK_STREAM
     if (YAJP_DESERIALIZATION_RESULT_STATUS_OK != deserialization_result.status) {
@@ -150,7 +154,7 @@ yajp_deserialization_result_t yajp_deserialize_json_stream(FILE *json, const yaj
     deserialization_data.parser = parser;
     deserialization_data.user_data = user_data;
 
-    deserialization_result.status = yajp_deserialize(&deserialization_data, ctx, deserializing_struct);
+    deserialization_result.status = yajp_parse(&deserialization_data, ctx, deserializing_struct);
 
 #ifdef YAJP_TRACK_STREAM
     if (YAJP_DESERIALIZATION_RESULT_STATUS_OK != deserialization_result.status) {
@@ -168,9 +172,9 @@ yajp_deserialization_result_t yajp_deserialize_json_stream(FILE *json, const yaj
     return deserialization_result;
 }
 
-static yajp_deserialization_result_status_t yajp_deserialize(yajp_deserialization_data_t *data,
-                                                             const yajp_deserialization_ctx_t *ctx,
-                                                             void *address) {
+static yajp_deserialization_result_status_t yajp_parse(yajp_deserialization_data_t *data,
+                                                       const yajp_deserialization_ctx_t *ctx,
+                                                       void *address) {
 #define TOKENS_CNT 3
     yajp_deserialization_result_status_t result = YAJP_DESERIALIZATION_RESULT_STATUS_OK;
     yajp_lexer_token_t tokens[TOKENS_CNT];
@@ -205,7 +209,7 @@ static yajp_deserialization_result_status_t yajp_deserialize(yajp_deserializatio
             yajp_lexer_release_token(&tokens[i % TOKENS_CNT]);
         }
 
-    } while (YAJP_TOKEN_EOF != last_token);
+    } while (YAJP_TOKEN_EOF != last_token && YAJP_TOKEN_OEND != last_token);
 
 end:
     for (i = 0; i < TOKENS_CNT; i++) {
@@ -245,6 +249,8 @@ static yajp_deserialization_result_status_t yajp_deserialize_value(yajp_deserial
                 status = yajp_parse_array_value(data, name, action, sizeof(char), address);
                 break;
             case (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_OBJECT):
+                status = yajp_parse_object_value(data, action, address);
+                break;
             case (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_OBJECT):
             default:
                 status = YAJP_DESERIALIZATION_RESULT_STATUS_UNRECOGNIZED_TOKEN;
@@ -436,6 +442,7 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
     yajp_deserialization_result_status_t result = YAJP_DESERIALIZATION_RESULT_STATUS_OK;
     yajp_lexer_token_t tokens[TOKEN_CNT];
     yajp_lexer_token_t *current_token;
+    yajp_token_type_t picked_token;
 
     yajp_parser_recognized_entity_t recognized_entity;
     int i = 0, setter_result;
@@ -454,11 +461,12 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
         i++;
 
         yajp_lexer_get_next_token(data->lexer_input, current_token);
+        picked_token = current_token->token;
 
         recognized_entity.type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_NONE;
-        yajp_parser_parse(data->parser, current_token->token, current_token, &recognized_entity);
+        yajp_parser_parse(data->parser, picked_token, current_token, &recognized_entity);
 
-        if (YAJP_TOKEN_ABEGIN == current_token->token) {
+        if (YAJP_TOKEN_ABEGIN == picked_token) {
             *final_dim = false;
 
             elem_address = *(void **)(address + action->option_params.array_field.rows_offset);
@@ -477,7 +485,7 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
             result =  yajp_parse_array_value_internal(data, name, action, array_item_additional_size, elem_address);
             if (result != YAJP_DESERIALIZATION_RESULT_STATUS_OK) {
                 goto end;
-            } 
+            }
 
             row_shift += action->size;
             (*count)++;
@@ -528,7 +536,8 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
             yajp_lexer_release_token(&tokens[i % TOKEN_CNT]);
         }
     } while ((YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_AEND != recognized_entity.type) &&
-             (YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR != recognized_entity.type));
+             (YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR != recognized_entity.type) &&
+             (YAJP_TOKEN_AEND != picked_token));
 
 end:
     for (i = 0; i < TOKEN_CNT; i++) {
@@ -536,4 +545,31 @@ end:
     }
     return result;
 #undef TOKENS_CNT
+}
+
+static yajp_deserialization_result_status_t yajp_parse_object_value(yajp_deserialization_data_t *data,
+                                                                    const yajp_deserialization_action_t *action,
+                                                                    void *address) {
+    yajp_deserialization_result_status_t result;
+
+    if (action->option_params.object_filed.allocate) {
+        void *tmp = malloc(action->size);
+        if (NULL == tmp) {
+            return YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
+        }
+        memset(tmp, 0, action->size);
+        result = yajp_parse(data, action->option_params.object_filed.ctx, tmp);
+
+        if (YAJP_DESERIALIZATION_RESULT_STATUS_OK != result) {
+            free(tmp);
+            return result;
+        } else {
+            *(void **)address = tmp;
+        }
+    } else {
+        memset(address, 0, action->size);
+        result = yajp_parse(data, action->option_params.object_filed.ctx, address);
+    }
+
+    return result;
 }

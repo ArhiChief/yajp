@@ -449,12 +449,15 @@ typedef struct {
 
 static test_result_t yajp_deserialize_json_test_inherited_object() {
     typedef struct {
-        inner_object_t f1;
-        inner_object_t *f2;
+        inner_object_t obj1;
+        inner_object_t *obj2;
     } test_struct_t;
 
     static const char js[] = "{\"obj1\":{\"f1\":10,\"f2\":[1,2,3]},\"obj2\":{\"f1\":-2,\"f2\":[-1,-2,-3]}}";
     static const size_t js_size = sizeof(js);
+
+    static const int test_arr1[] = {1,2,3};
+    static const int test_arr2[] = {-1,-2,-3};
 
     yajp_deserialization_ctx_t ctx, inner_obj_ctx;
     yajp_deserialization_action_t actions[2], inner_obj_actions[2];
@@ -462,9 +465,49 @@ static test_result_t yajp_deserialize_json_test_inherited_object() {
     int ret;
 
     test_struct_t test_struct;
+    int8_t zero_arr[sizeof(inner_object_t)/sizeof(int8_t)];
+
+    memset(&test_struct, 0, sizeof (test_struct));
+    memset(zero_arr, 0, sizeof(zero_arr));
+
+    ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(inner_object_t, f1, yajp_set_int, &inner_obj_actions[0]);
+    test_is_equal(ret, 0, "");
+    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(inner_object_t, f2, array_handle_t, count, final_dim,
+                                                                 rows, elems, int, false, true, yajp_set_int, &inner_obj_actions[1]);
+    test_is_equal(ret, 0, "");
 
     ret = yajp_deserialization_ctx_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
+    test_is_equal(ret, 0, "");
+
+
+    ret = YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, obj1, inner_object_t, &inner_obj_ctx, false, &actions[0]);
+    test_is_equal(ret, 0, "");
+    ret = YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, obj2, inner_object_t, &inner_obj_ctx, true, &actions[1]);
+    test_is_equal(ret, 0, "");
     ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "");
+
+    dres = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+
+    test_is_equal(dres.status, YAJP_DESERIALIZATION_RESULT_STATUS_OK, "");
+    test_is_not_null(test_struct.obj2, "");
+    test_is_not_equal(0, memcmp(&test_struct.obj1, zero_arr, sizeof(test_struct.obj1)), "");
+
+    test_is_equal(10, test_struct.obj1.f1, "");
+    test_is_equal(-2, test_struct.obj2->f1, "");
+
+    test_is_equal(ARR_LEN(test_arr1), test_struct.obj1.f2.count, "");
+    test_is_true(test_struct.obj1.f2.final_dim, "");
+    test_is_equal(0, memcmp(test_arr1, test_struct.obj1.f2.elems, sizeof(test_arr1)), "");
+
+
+    test_is_equal(ARR_LEN(test_arr2), test_struct.obj2->f2.count, "");
+    test_is_true(test_struct.obj2->f2.final_dim, "");
+    test_is_equal(0, memcmp(test_arr2, test_struct.obj2->f2.elems, sizeof(test_arr2)), "");
+
+    free(test_struct.obj1.f2.elems);
+    free(test_struct.obj2->f2.elems);
+    free(test_struct.obj2);
 
     return TEST_RESULT_PASSED;
 }
@@ -485,8 +528,10 @@ static test_result_t yajp_deserialize_json_test_array_of_objects() {
     test_struct_t test_struct;
 
     ret = yajp_deserialization_ctx_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "");
 
+    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "");
 
     return TEST_RESULT_PASSED;
 }
