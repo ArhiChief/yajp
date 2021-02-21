@@ -513,6 +513,8 @@ static test_result_t yajp_deserialize_json_test_inherited_object() {
 }
 
 static test_result_t yajp_deserialize_json_test_array_of_objects() {
+#define arr_cnt 3
+
     typedef struct {
         array_handle_t arr1;
     } test_struct_t;
@@ -520,18 +522,51 @@ static test_result_t yajp_deserialize_json_test_array_of_objects() {
     static const char js[] = "{\"arr1\":[{\"f1\":10,\"f2\":[1,2,3]},{\"f1\":-10,\"f2\":[-1,-2,-3]},{\"f1\":12,\"f2\":[11,21,31]}]}";
     static const size_t js_size = sizeof(js);
 
+    static const int f1_vals[] = { 10, -10, 12 };
+    static const int f2_vals[arr_cnt][arr_cnt] = { {1,2,3}, {-1,-2,-3}, {11,21,31} };
+    inner_object_t *arr_elem;
+
     yajp_deserialization_ctx_t ctx, inner_obj_ctx;
     yajp_deserialization_action_t actions[1], inner_obj_actions[2];
-    yajp_deserialization_result_t dres;
-    int ret;
+    int ret, i;
 
     test_struct_t test_struct;
 
+    yajp_deserialization_result_t dres;
+
+    memset(&test_struct, 0, sizeof(test_struct));
+
+    ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(inner_object_t, f1, yajp_set_int, &inner_obj_actions[0]);
+    test_is_equal(ret, 0, "");
+    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(inner_object_t, f2, array_handle_t, count, final_dim,
+                                                                    rows, elems, int, false, true, yajp_set_int, &inner_obj_actions[1]);
+    test_is_equal(ret, 0, "");
     ret = yajp_deserialization_ctx_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
     test_is_equal(ret, 0, "");
 
+    ret = YAJP_ARRAY_OF_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr1, array_handle_t, count, final_dim, rows, elems, inner_object_t, false, true, &inner_obj_ctx, &actions[0]);
+    test_is_equal(ret, 0, "");
     ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
     test_is_equal(ret, 0, "");
 
+    dres = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    test_is_equal(YAJP_DESERIALIZATION_RESULT_STATUS_OK, dres.status, "");
+
+    test_is_true(test_struct.arr1.final_dim, "");
+    test_is_equal(test_struct.arr1.count, arr_cnt, "");
+
+    for (i = 0; i < ARR_LEN(f1_vals); i++) {
+        arr_elem = &((inner_object_t *)test_struct.arr1.elems)[i];
+        test_is_equal(arr_elem->f1, f1_vals[i], "");
+        test_is_true(arr_elem->f2.final_dim, "");
+        test_is_equal(arr_elem->f2.count, arr_cnt, "");
+        test_is_equal(0, memcmp(arr_elem->f2.elems, f2_vals[i], sizeof(f2_vals[i])), "");
+
+        free(arr_elem->f2.elems);
+    }
+
+    free(test_struct.arr1.elems);
+
+#undef arr_cnt
     return TEST_RESULT_PASSED;
 }

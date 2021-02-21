@@ -59,14 +59,24 @@ static yajp_deserialization_result_status_t yajp_parse_array_value(yajp_deserial
                                                                    void *base_address);
 
 static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp_deserialization_data_t *data,
-                                                                   const yajp_lexer_token_t *name,
-                                                                   const yajp_deserialization_action_t *action,
-                                                                   size_t array_item_additional_size,
-                                                                   void *base_address);
+                                                                            const yajp_lexer_token_t *name,
+                                                                            const yajp_deserialization_action_t *action,
+                                                                            size_t array_item_additional_size,
+                                                                            void *base_address);
 
 static yajp_deserialization_result_status_t yajp_parse_object_value(yajp_deserialization_data_t *data,
-                                                                     const yajp_deserialization_action_t *action,
-                                                                     void *base_address);
+                                                                    const yajp_deserialization_action_t *action,
+                                                                    void *base_address);
+
+static yajp_deserialization_result_status_t yajp_parse_array_of_objects_value(yajp_deserialization_data_t *data,
+                                                                              const yajp_deserialization_action_t *action,
+                                                                              void *base_address);
+
+static yajp_deserialization_result_status_t
+yajp_parse_array_of_objects_value_internal(yajp_deserialization_data_t *data,
+                                           const yajp_deserialization_action_t *action,
+                                           void *base_address);
+
 
 yajp_deserialization_result_t yajp_deserialize_json_string(const char *json, size_t json_size,
                                                            const yajp_deserialization_ctx_t *ctx,
@@ -211,7 +221,7 @@ static yajp_deserialization_result_status_t yajp_parse(yajp_deserialization_data
 
     } while (YAJP_TOKEN_EOF != last_token && YAJP_TOKEN_OEND != last_token);
 
-end:
+    end:
     for (i = 0; i < TOKENS_CNT; i++) {
         yajp_lexer_release_token(&tokens[i % TOKENS_CNT]);
     }
@@ -252,6 +262,8 @@ static yajp_deserialization_result_status_t yajp_deserialize_value(yajp_deserial
                 status = yajp_parse_object_value(data, action, address);
                 break;
             case (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_OBJECT):
+                status = yajp_parse_array_of_objects_value(data, action, address);
+                break;
             default:
                 status = YAJP_DESERIALIZATION_RESULT_STATUS_UNRECOGNIZED_TOKEN;
                 break;
@@ -309,7 +321,7 @@ static yajp_deserialization_result_status_t yajp_parse_primitive_value(yajp_dese
                     tmp = NULL;
                 }
 
-                *(void **)address = tmp;
+                *(void **) address = tmp;
 
             } else {
                 setter_result = action->option_params.primitive_field.setter(
@@ -421,23 +433,23 @@ static yajp_deserialization_result_status_t yajp_parse_array_value(yajp_deserial
             free(tmp);
             goto end;
         } else {
-            *(void **)address = tmp;
+            *(void **) address = tmp;
         }
     } else {
         memset(address, 0, action->size);
         result = yajp_parse_array_value_internal(data, name, action, array_item_additional_size, address);
     }
 
-end:
+    end:
     yajp_lexer_release_token(&current_token);
     return result;
 }
 
 static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp_deserialization_data_t *data,
-                                                                   const yajp_lexer_token_t *name,
-                                                                   const yajp_deserialization_action_t *action,
-                                                                   size_t array_item_additional_size,
-                                                                   void *address) {
+                                                                            const yajp_lexer_token_t *name,
+                                                                            const yajp_deserialization_action_t *action,
+                                                                            size_t array_item_additional_size,
+                                                                            void *address) {
 #define TOKEN_CNT 3
     yajp_deserialization_result_status_t result = YAJP_DESERIALIZATION_RESULT_STATUS_OK;
     yajp_lexer_token_t tokens[TOKEN_CNT];
@@ -469,7 +481,7 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
         if (YAJP_TOKEN_ABEGIN == picked_token) {
             *final_dim = false;
 
-            elem_address = *(void **)(address + action->option_params.array_field.rows_offset);
+            elem_address = *(void **) (address + action->option_params.array_field.rows_offset);
             elem_address = realloc(elem_address, row_shift + action->size);
 
             if (NULL == elem_address) {
@@ -479,10 +491,10 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
 
             memset(elem_address + row_shift, 0, action->size);
 
-            *(void **)(address + action->option_params.array_field.rows_offset) = elem_address;
+            *(void **) (address + action->option_params.array_field.rows_offset) = elem_address;
             elem_address += row_shift;
 
-            result =  yajp_parse_array_value_internal(data, name, action, array_item_additional_size, elem_address);
+            result = yajp_parse_array_value_internal(data, name, action, array_item_additional_size, elem_address);
             if (result != YAJP_DESERIALIZATION_RESULT_STATUS_OK) {
                 goto end;
             }
@@ -493,7 +505,7 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
 
         if (YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE == recognized_entity.type) {
             if (action->option_params.array_field.allocate_elems) {
-                elem_address = *(void **)(address + action->option_params.array_field.elems_offset);
+                elem_address = *(void **) (address + action->option_params.array_field.elems_offset);
                 elem_address = realloc(elem_address, row_shift + action->option_params.array_field.elem_size);
 
                 if (NULL == elem_address) {
@@ -501,7 +513,7 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
                     goto end;
                 }
 
-                *(void **)(address + action->option_params.array_field.elems_offset) = elem_address;
+                *(void **) (address + action->option_params.array_field.elems_offset) = elem_address;
             } else {
                 elem_address = address + action->option_params.array_field.elems_offset;
             }
@@ -514,13 +526,14 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
                     result = YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
                     goto end;
                 }
-                *(void **)(elem_address) = str;
+                *(void **) (elem_address) = str;
                 elem_address = str;
             }
 
             setter_result = action->option_params.array_field
                     .setter(name->attributes.value, name->attributes.value_size,
-                            recognized_entity.token->attributes.value, recognized_entity.token->attributes.value_size,
+                            recognized_entity.token->attributes.value,
+                            recognized_entity.token->attributes.value_size,
                             elem_address, data->user_data);
 
             if (0 != setter_result) {
@@ -539,7 +552,7 @@ static yajp_deserialization_result_status_t yajp_parse_array_value_internal(yajp
              (YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR != recognized_entity.type) &&
              (YAJP_TOKEN_AEND != picked_token));
 
-end:
+    end:
     for (i = 0; i < TOKEN_CNT; i++) {
         yajp_lexer_release_token(&tokens[i]);
     }
@@ -564,7 +577,7 @@ static yajp_deserialization_result_status_t yajp_parse_object_value(yajp_deseria
             free(tmp);
             return result;
         } else {
-            *(void **)address = tmp;
+            *(void **) address = tmp;
         }
     } else {
         memset(address, 0, action->size);
@@ -572,4 +585,142 @@ static yajp_deserialization_result_status_t yajp_parse_object_value(yajp_deseria
     }
 
     return result;
+}
+
+static yajp_deserialization_result_status_t yajp_parse_array_of_objects_value(yajp_deserialization_data_t *data,
+                                                                              const yajp_deserialization_action_t *action,
+                                                                              void *address) {
+    yajp_lexer_token_t current_token;
+    yajp_parser_recognized_entity_t recognized_entity;
+    yajp_deserialization_result_status_t result;
+
+    yajp_lexer_get_next_token(data->lexer_input, &current_token);
+    if (YAJP_TOKEN_ABEGIN != current_token.token) {
+        result = YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_ABEGIN;
+        goto end;
+    }
+
+    yajp_parser_parse(data->parser, current_token.token, &current_token, &recognized_entity);
+
+    if (action->option_params.array_of_objects_field.allocate) {
+        void *tmp = malloc(action->size);
+        if (NULL == tmp) {
+            return YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
+        }
+        memset(tmp, 0, action->size);
+        result = yajp_parse_array_of_objects_value_internal(data, action, tmp);
+
+        if (YAJP_DESERIALIZATION_RESULT_STATUS_OK != result) {
+            free(tmp);
+            goto end;
+        } else {
+            *(void **) address = tmp;
+        }
+    } else {
+        memset(address, 0, action->size);
+        result = yajp_parse_array_of_objects_value_internal(data, action, address);
+    }
+
+    end:
+    yajp_lexer_release_token(&current_token);
+    return result;
+}
+
+static
+yajp_deserialization_result_status_t yajp_parse_array_of_objects_value_internal(yajp_deserialization_data_t *data,
+                                                                                const yajp_deserialization_action_t *action,
+                                                                                void *address) {
+#define TOKEN_CNT 3
+    yajp_deserialization_result_status_t result = YAJP_DESERIALIZATION_RESULT_STATUS_OK;
+    yajp_lexer_token_t tokens[TOKEN_CNT];
+    yajp_lexer_token_t *current_token;
+    yajp_token_type_t picked_token;
+
+    yajp_parser_recognized_entity_t recognized_entity;
+    int i = 0;
+    size_t row_shift = 0;
+    void *elem_address;
+
+    size_t *count = address + action->option_params.array_of_objects_field.counter_offset;
+    bool *final_dim = address + action->option_params.array_of_objects_field.final_dym_offset;
+
+    *final_dim = true;
+
+    memset(tokens, 0, sizeof(tokens));
+
+    do {
+        current_token = &tokens[i % TOKEN_CNT];
+        i++;
+
+        yajp_lexer_get_next_token(data->lexer_input, current_token);
+        picked_token = current_token->token;
+
+        recognized_entity.type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_NONE;
+        yajp_parser_parse(data->parser, picked_token, current_token, &recognized_entity);
+
+        if (YAJP_TOKEN_ABEGIN == picked_token) {
+            *final_dim = false;
+
+            elem_address = *(void **) (address + action->option_params.array_of_objects_field.rows_offset);
+            elem_address = realloc(elem_address, row_shift + action->size);
+
+            if (NULL == elem_address) {
+                result = YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
+                goto end;
+            }
+
+            memset(elem_address + row_shift, 0, action->size);
+
+            *(void **) (address + action->option_params.array_of_objects_field.rows_offset) = elem_address;
+            elem_address += row_shift;
+
+            result = yajp_parse_array_of_objects_value_internal(data, action, elem_address);
+            if (result != YAJP_DESERIALIZATION_RESULT_STATUS_OK) {
+                goto end;
+            }
+
+            row_shift += action->size;
+            (*count)++;
+        }
+
+        if (YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_VALUE == recognized_entity.type || YAJP_TOKEN_OBEGIN == picked_token) {
+            if (action->option_params.array_of_objects_field.allocate_elems) {
+                elem_address = *(void **) (address + action->option_params.array_of_objects_field.elems_offset);
+                elem_address = realloc(elem_address,
+                                       row_shift + action->option_params.array_of_objects_field.elem_size);
+
+                if (NULL == elem_address) {
+                    result = YAJP_DESERIALIZATION_RESULT_STATUS_ERRNO_SET;
+                    goto end;
+                }
+
+                *(void **) (address + action->option_params.array_of_objects_field.elems_offset) = elem_address;
+            } else {
+                elem_address = address + action->option_params.array_of_objects_field.elems_offset;
+            }
+
+            elem_address += row_shift;
+
+            result = yajp_parse(data, action->option_params.array_of_objects_field.ctx, elem_address);
+            if (YAJP_DESERIALIZATION_RESULT_STATUS_OK != result) {
+                goto end;
+            }
+
+            (*count)++;
+            row_shift += action->option_params.array_of_objects_field.elem_size;
+        }
+
+        if (i >= TOKEN_CNT) {
+            yajp_lexer_release_token(&tokens[i % TOKEN_CNT]);
+        }
+    } while ((YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_AEND != recognized_entity.type) &&
+             (YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR != recognized_entity.type) &&
+             (YAJP_TOKEN_AEND != picked_token));
+
+    end:
+    for (i = 0; i < TOKEN_CNT; i++) {
+        yajp_lexer_release_token(&tokens[i]);
+    }
+    return result;
+#undef TOKENS_CNT
 }

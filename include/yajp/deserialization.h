@@ -287,7 +287,6 @@ int yajp_deserialization_action_init(const char *field_name,
  * }
  * @endcode
  *
- *
  * @param[in]   field_name          Name of field in JSON stream
  * @param[in]   name_size           Size of field name in JSON without '\0' character
  * @param[in]   field_offset        Offset of field in deserializing structure
@@ -341,15 +340,66 @@ int yajp_deserialization_object_action_init(const char *field_name,
                                             );
 
 /**
+ * *
+ * Generic function to initialize deserialization action for arrays of objects
  *
- * @param field_name
- * @param name_size
- * @param field_offset
- * @param field_size
- * @param options
- * @param ctx
- * @param action
- * @return
+ * @details
+ * Array deserialization is a complex process because nigher size of array, nor amount of array dimensions is unknown
+ * until deserialization ends. Even if user knows array parameters it's impossible to make it more easier because JSON
+ * supports arrays with non-constant amount of elements in each dimensions. To cover this case, YAJP expects that
+ * deserializing array will be represented as a struct used to hold dynamic arrays, similar to something like this:
+ * @code
+ *  typedef struct inner_object inner_object_t;
+ *
+ *  typedef struct test_struct_arr test_struct_arr_t;
+ *  struct test_struct_arr {
+ *      union {  // union here can be replaced with struct if you want. Union is used to reduce amount of space
+ *          inner_object_t *elems;   // pointer to array used to store deserializing array values
+ *          test_struct_arr_t *rows; // pointer to rows if array is multidimensional
+ *       };
+ *       bool final_dim; // flag used to determine what structure holds array values. `false` if struct holds rows
+ *       size_t count; // amount of items in `elems` or `rows`
+ *   };
+ * @endcode
+ * `final_dim` require additional attention. In case if YAJP deserializing matrix (2-dim array) next peace of code should
+ * works fine:
+ * @code
+ * typedef struct {
+ *  test_struct_arr_t arr;
+ * } deserializing_struct_t;
+ *
+ * // field declaration
+ * deserializing_struct_t test_struct;
+ *
+ * // general deserialization routines
+ *
+ * rows_count = test_struct.arr.count;   // will show amount of rows in matrix
+ *
+ * for (i = 0; i < rows_count; i++) {   // traverse matrix
+ *  assert(test_struct.arr.final_dim == false);
+ *  columns_count = test_struct.arr.rows[i].count; // amount of elements in row
+ *  assert(test_struct.arr.rows[i].final_dim == true);
+ *  for (int j = 0; j < columns_count; j++) {
+ *      // do whatever we want with matrix element
+ *      value = test_struct.arr.rows[i].elems[j];
+ *  }
+ * }
+ * @endcode
+ *
+ * @param[in]   field_name          Name of field in JSON stream
+ * @param[in]   name_size           Size of field name in JSON without '\0' character
+ * @param[in]   field_offset        Offset of field in deserializing structure
+ * @param[in]   field_size          Size of field in deserializing structure
+ * @param[in]   options             Deserialization options for field in deserialization process
+ * @param[in]   counter_offset      Offset of counter field
+ * @param[in]   final_dim_offset    Offset to flag used to point that structure points to elements
+ * @param[in]   rows_offset         Offset of field used to store other dimensions
+ * @param[in]   elem_size           Size of array item
+ * @param[in]   elems_offset        Offset of field to store array items
+ * @param[in]   ctx                 Pointer to deserialization context used to deserialize object
+ * @param[out]  action              Pointer to initializing deserialization action
+ *
+ * @return  Result of initialization. 0 on success
  */
 int yajp_deserialization_array_object_action_init(const char *field_name,
                                                   size_t name_size,
@@ -636,6 +686,7 @@ int yajp_deserialization_array_object_action_init(const char *field_name,
  *
  * @param[in]   structure
  * @param[in]   field
+ * @param[in]   field_type
  * @param[in]   ctx
  * @param[in]   allocate
  * @param[out]  action
@@ -644,7 +695,7 @@ int yajp_deserialization_array_object_action_init(const char *field_name,
  *          deserializing structure and JSON stream are same.
  */
 #define YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, ctx, allocate, action)             \
-yajp_deserialization_object_action_init(#field,                                                                        \
+    yajp_deserialization_object_action_init(#field,                                                                    \
         string_size_without_null(#field),                                                                              \
         offsetof(structure, field),                                                                                    \
         sizeof(field_type),                                                                                            \
@@ -652,7 +703,7 @@ yajp_deserialization_object_action_init(#field,                                 
             ((allocate) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE),    \
         ctx,                                                                                                           \
         action                                                                                                         \
-        )
+    )
 
 /**
  * Convenient initialization of deserialization action for object field
@@ -686,7 +737,22 @@ yajp_deserialization_object_action_init(#field,                                 
  * @note    Use this macro for deserialization of array of object field. Macro expects that name of field in
  *          deserializing structure and JSON stream are same.
  */
-#define YAJP_ARRAY_OF_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, ctx, action)
+#define YAJP_ARRAY_OF_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, ctx, action) \
+    yajp_deserialization_array_object_action_init(#field,                                                                                                                      \
+        string_size_without_null(#field),                                                                                                                                      \
+        offsetof(structure, field),                                                                                                                                            \
+        sizeof(field_type),                                                                                                                                                    \
+        YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_OBJECT |                                                                  \
+            ((allocate) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE) |                                                           \
+            ((allocate_elem) ? YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE_ELEMENTS : YAJP_DESERIALIZATION_ACTION_OPTIONS_NONE),                                              \
+        offsetof(field_type, counter),                                                                                                                                         \
+        offsetof(field_type, final_dim),                                                                                                                                       \
+        offsetof(field_type, rows),                                                                                                                                            \
+        sizeof(elem_type),                                                                                                                                                     \
+        offsetof(field_type, elems),                                                                                                                                           \
+        ctx,                                                                                                                                                                   \
+        action                                                                                                                                                                 \
+    )
 
 /**
  * Convenient initialization of deserialization action for array of object field
