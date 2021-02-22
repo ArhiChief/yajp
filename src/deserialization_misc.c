@@ -39,7 +39,8 @@ unsigned long yajp_calculate_hash(const uint8_t *data, size_t data_size) {
 }
 
 static int actions_comparator(const void *pkey, const void *pelem) {
-    return ((const yajp_deserialization_action_t *)pkey)->field_key - ((const yajp_deserialization_action_t *)pelem)->field_key;
+    return ((const yajp_deserialization_action_t *) pkey)->field_key -
+           ((const yajp_deserialization_action_t *) pelem)->field_key;
 }
 
 void yajp_sort_actions_in_context(yajp_deserialization_ctx_t *ctx) {
@@ -51,7 +52,7 @@ void yajp_sort_actions_in_context(yajp_deserialization_ctx_t *ctx) {
 const yajp_deserialization_action_t *yajp_find_action_in_context(const yajp_deserialization_ctx_t *ctx,
                                                                  const uint8_t *name, size_t name_size) {
     const yajp_deserialization_action_t *action = NULL;
-    const yajp_deserialization_action_t key = { .field_key = yajp_calculate_hash(name, name_size) };
+    const yajp_deserialization_action_t key = {.field_key = yajp_calculate_hash(name, name_size)};
 
     if (NULL != ctx && NULL != ctx->actions && 0 < ctx->actions_cnt) {
         action = bsearch(&key, ctx->actions, ctx->actions_cnt, sizeof(*ctx->actions), actions_comparator);
@@ -77,12 +78,12 @@ char *yajp_deserialization_result_status_to_str(const yajp_deserialization_resul
 #define STR_UNRECOGNIZED_TOKEN          "Unrecognized token found"
 
 #ifdef YAJP_TRACK_STREAM
-    #define STR_DESERIALIZATION_FAILED  "Failed to deserialize field at line: %d, column: %d"
-    #define STR_UNEXPECTED_TOKEN        "Unexpected token found, expected: '%s', found: '%s' at line: %d, column: %d";
+#define STR_DESERIALIZATION_FAILED  "Failed to deserialize field at line: %d, column: %d"
+#define STR_UNEXPECTED_TOKEN        "Unexpected token found, expected: '%s', found: '%s' at line: %d, column: %d";
     static const size_t description_len = sizeof(STR_UNEXPECTED_TOKEN) + (7 + 7 + 5 + 5) * sizeof(char);
 #else
-    #define STR_DESERIALIZATION_FAILED  "Failed to deserialize field"
-    #define STR_UNEXPECTED_TOKEN        "Unexpected token found, expected: '%s', found: '%s'"
+#define STR_DESERIALIZATION_FAILED  "Failed to deserialize field"
+#define STR_UNEXPECTED_TOKEN        "Unexpected token found, expected: '%s', found: '%s'"
     static const size_t description_len = sizeof(STR_UNEXPECTED_TOKEN) + (7 + 7) * sizeof(char);
 #endif
 
@@ -193,11 +194,11 @@ char *yajp_deserialization_result_status_to_str(const yajp_deserialization_resul
 }
 
 static void yajp_deserialization_action_init_common(const char *field_name,
-                                               size_t name_size,
-                                               size_t offset,
-                                               size_t field_size,
-                                               yajp_deserialization_action_options_t options,
-                                               yajp_deserialization_action_t *action) {
+                                                    size_t name_size,
+                                                    size_t offset,
+                                                    size_t field_size,
+                                                    yajp_deserialization_action_options_t options,
+                                                    yajp_deserialization_action_t *action) {
     memset(action, 0, sizeof(*action));
 
     action->field_key = yajp_calculate_hash(field_name, name_size);
@@ -221,7 +222,7 @@ int yajp_deserialization_action_init(const char *field_name,
             action->option_params.primitive_field.setter = setter;
             action->option_params.primitive_field.allocate = false;
             break;
-        case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING | YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE:
+        case (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING | YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE):
             action->option_params.primitive_field.allocate = true;
         case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING:
             action->option_params.primitive_field.setter = setter;
@@ -271,4 +272,59 @@ int yajp_deserialization_array_action_init(const char *field_name,
     }
 
     return -1;
+}
+
+int yajp_deserialization_object_action_init(const char *field_name,
+                                            size_t name_size,
+                                            size_t field_offset,
+                                            size_t field_size,
+                                            yajp_deserialization_action_options_t options,
+                                            const yajp_deserialization_ctx_t *ctx,
+                                            yajp_deserialization_action_t *action) {
+
+    yajp_deserialization_action_init_common(field_name, name_size, field_offset, field_size, options, action);
+
+    if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE) {
+        action->option_params.object_filed.allocate = true;
+    }
+
+    action->option_params.object_filed.ctx = ctx;
+
+    return 0;
+}
+
+int yajp_deserialization_array_object_action_init(const char *field_name,
+                                                  size_t name_size,
+                                                  size_t field_offset,
+                                                  size_t field_size,
+                                                  yajp_deserialization_action_options_t options,
+                                                  size_t counter_offset,
+                                                  size_t final_dim_offset,
+                                                  size_t rows_offset,
+                                                  size_t elem_size,
+                                                  size_t elems_offset,
+                                                  const yajp_deserialization_ctx_t *ctx,
+                                                  yajp_deserialization_action_t *action) {
+
+    yajp_deserialization_action_init_common(field_name, name_size, field_offset, field_size, options, action);
+
+    action->option_params.array_of_objects_field.ctx = ctx;
+
+    action->option_params.array_of_objects_field.counter_offset = counter_offset;
+
+    action->option_params.array_of_objects_field.final_dym_offset = final_dim_offset;
+
+    action->option_params.array_of_objects_field.rows_offset = rows_offset;
+
+    action->option_params.array_of_objects_field.elems_offset = elems_offset;
+    action->option_params.array_of_objects_field.elem_size = elem_size;
+
+    if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE) {
+        action->option_params.array_of_objects_field.allocate = true;
+    }
+    if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE_ELEMENTS) {
+        action->option_params.array_of_objects_field.allocate_elems = true;
+    }
+
+    return 0;
 }

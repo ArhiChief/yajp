@@ -267,6 +267,53 @@ result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_
 result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, dyn_arr_val2, arr_of_ints_t, count, final_dim, rows, elems, int, true, false, yajp_set_long_int, action2);
 ```
 
+#### Inherited objects and array of objects deserialization
+Goes same way as deserialization of other types, but instead of setters deserialization context is used. 
+Next macros are used for this:
+```c
+#define YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, ctx, allocate, action)
+
+#define YAJP_OBJECT_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, ctx, allocate, action)
+```
+- `json_field`- Name of field in JSON stream;
+- `structure` - Type of structure where deserializing field is stored;
+- `field`     - Name of field in deserializing structure;
+- `field_type`- Type of field in deserializing structure;
+- `ctx`       - Pointer to deserialization context;
+- `allocate`  - Allocate memory for field.
+
+```c
+#define YAJP_ARRAY_OF_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, ctx, action)
+
+#define YAJP_ARRAY_OF_OBJECT_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT(json_field, structure, field, field_type, counter, final_dim, rows, elems, elem_type, allocate, allocate_elem, ctx, action)
+```
+
+- `json_field`    - Name of field in JSON stream;
+- `structure`     - Type of structure where deserializing field is stored;
+- `field`         - Name of field in deserializing structure;
+- `field_type`    - Type of field in deserializing structure;
+- `counter`       - Name of array counter field;
+- `final_dim`     - Name of field used as final dimension flag;
+- `rows`          - Name of field used as holders to rows of array;
+- `elems`         - Name of field used as holder for element values;
+- `elem_type`     - Type of array element;
+- `allocate`      - Allocate memory for field;
+- `allocate_elem` - Allocate memory for array elements;
+- `ctx`           - Pointer to deserialization context;
+- `action`        - Pointer to initializing deserialization action.
+
+#### Deserialization context initialization
+Deserialization context is represented with struct `yajp_deserialization_ctx` (typedef version is `yajp_deserialization_ctx_t`) 
+and used to store deserialization actions of deserializing object. It can be initialized using next function:
+```c
+int yajp_deserialization_ctx_init(yajp_deserialization_action_t *acts, int count, yajp_deserialization_ctx_t *ctx)
+```
+- `acts`  - Pointer to array of deserialization action;
+- `count` - Number of deserialization action in array;
+- `ctx`   - Pointer to initializing deserialization context;
+- returns result of deserialization context initialization. 0 on success.
+
+
 #### Deserialization example
 ```c
 #include <stdio.h>
@@ -296,6 +343,12 @@ typedef struct arr_of_ints {
     bool final_dim;
 } arr_of_ints_t;
 
+// inherited object
+typedef struct {
+    int f1;
+    array_handle_t f2;
+} inner_object_t;
+
 typedef struct test_struct {
     short           short_val;
     int             int_val;
@@ -318,11 +371,20 @@ typedef struct test_struct {
 
     dyn_arr_t       *matrix_val;        // 2-dimension array
     dyn_arr_t       *cube_val;          // 3-dimension array
+
+    inner_object_t  obj1;               // inherited object
+    inner_object_t  *obj2;              // pointer to inherited object
+
+    array_handle_t  obj_arr;            // array of object
+    
 } test_struct_t;
 
-#define TEST_STRUCT_FIELDS_CNT  17
+#define TEST_STRUCT_FIELDS_CNT  20
 static yajp_deserialization_action_t    deserialization_actions[TEST_STRUCT_FIELDS_CNT];
 static yajp_deserialization_ctx_t       deserialization_context;
+
+static yajp_deserialization_action_t    inner_obj_actions[2];
+static yajp_deserialization_ctx_t       inner_object_deserialization_context;
 
 // function is quite big, but it can be called once and result can be used multiple times.
 static int init_deserialization_context() {
@@ -404,14 +466,33 @@ static int init_deserialization_context() {
     if (0 != result) { return result; }
 
     // yajp expects what arrays of strings are represented as array of pointers to strings  
-    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, strings_arr_val, dyn_arr_t, count, final_dim, rows, elems, char*, true, true, yajp_set_string, &deserialization_actions[13]);
+    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, strings_arr_val, dyn_arr_t, count, final_dim, rows, elems, char*, true, true, yajp_set_string, &deserialization_actions[14]);
     if (0 != result) { return result; }
     
     // yajp don't differentiate arrays, matrix of cubes. Unified structure is used to cover all cases
-    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, matrix_val, dyn_arr_t, count, final_dim, rows, elems, int, false, true, yajp_set_long_int, &deserialization_actions[11]);
+    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, matrix_val, dyn_arr_t, count, final_dim, rows, elems, int, false, true, yajp_set_long_int, &deserialization_actions[15]);
     if (0 != result) { return result; }
 
-    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, cube_val, dyn_arr_t, count, final_dim, rows, elems, int, false, true, yajp_set_long_int, &deserialization_actions[11]);
+    result = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT( test_struct_t, cube_val, dyn_arr_t, count, final_dim, rows, elems, int, false, true, yajp_set_long_int, &deserialization_actions[16]);
+    if (0 != result) { return result; }
+
+    ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(inner_object_t, f1, yajp_set_int, &inner_obj_actions[0]);
+    if (0 != result) { return result; }
+    
+    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(inner_object_t, f2, array_handle_t, count, final_dim,
+                                                                    rows, elems, int, false, true, yajp_set_int, &inner_obj_actions[1]);
+    if (0 != result) { return result; }
+
+    ret = YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, obj1, inner_object_t, &inner_obj_ctx, false, &actions[17]);
+    if (0 != result) { return result; }
+
+    ret = YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, obj2, inner_object_t, &inner_obj_ctx, true, &actions[18]);
+    if (0 != result) { return result; }
+    
+    ret = YAJP_ARRAY_OF_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, obj_arr, array_handle_t, count, final_dim, rows, elems, inner_object_t, false, true, &inner_obj_ctx, &actions[19]);
+    if (0 != result) { return result; }
+
+    ret = yajp_deserialization_ctx_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
     if (0 != result) { return result; }
     
     result = yajp_deserialization_ctx_init(deserialization_actions, TEST_STRUCT_FIELDS_CNT, &deserialization_context);
