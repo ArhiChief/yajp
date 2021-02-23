@@ -328,3 +328,19 @@ int yajp_deserialization_array_object_action_init(const char *field_name,
 
     return 0;
 }
+
+int a_yajp_deserialization_action_init(const char *name,
+                                       size_t name_size,
+                                       size_t field_offset,
+                                       size_t field_size,
+                                       int options,
+                                       size_t counter_offset,
+                                       size_t final_dim_offset,
+                                       size_t rows_offset,
+                                       size_t elems_offset,
+                                       size_t elem_size,
+                                       yajp_value_setter_t setter,
+                                       const yajp_deserialization_ctx_t *ctx,
+                                       yajp_deserialization_action_t *result) {
+    return 0;
+}

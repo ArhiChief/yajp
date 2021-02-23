@@ -178,6 +178,36 @@ typedef struct yajp_deserialization_result {
 char *yajp_deserialization_result_status_to_str(const yajp_deserialization_result_t *result);
 
 
+
+
+
+
+#define YAJP_DESERIALIZATION_OPTIONS_TYPE_NUMBER        0b00000001  // 0b 00 0 0 0001
+#define YAJP_DESERIALIZATION_OPTIONS_TYPE_STRING        0b00000010  // 0b 00 0 0 0010
+#define YAJP_DESERIALIZATION_OPTIONS_TYPE_BOOLEAN       0b00000100  // 0b 00 0 0 0100
+#define YAJP_DESERIALIZATION_OPTIONS_TYPE_OBJECT        0b00001000  // 0b 00 0 0 1000
+#define YAJP_DESERIALIZATION_TYPE_ARRAY_OF              0b00010000  // 0b 00 0 1 0000
+#define YAJP_DESERIALIZATION_TYPE_NULLABLE              0b00100000  // 0b 00 1 0 0000
+#define YAJP_DESERIALIZATION_OPTIONS_ALLOCATE           0b01000000  // 0b 01 0 0 0000
+#define YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS  0b10000000  // 0b 10 0 0 0000
+
+
+int a_yajp_deserialization_action_init(const char *name, size_t name_size, size_t field_offset, size_t field_size,
+                                       int options, size_t counter_offset, size_t final_dim_offset, size_t rows_offset,
+                                       size_t elems_offset, size_t elem_size, yajp_value_setter_t setter,
+                                       const yajp_deserialization_ctx_t *ctx, yajp_deserialization_action_t *result);
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * Initialize deserialization context
  * @param[in]   acts    Pointer to array of deserialization action

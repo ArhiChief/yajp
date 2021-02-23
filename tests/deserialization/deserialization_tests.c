@@ -36,6 +36,7 @@ static test_result_t yajp_deserialize_json_test_matrix_of_primitives();
 static test_result_t yajp_deserialize_json_test_cube_of_primitives();
 static test_result_t yajp_deserialize_json_test_inherited_object();
 static test_result_t yajp_deserialize_json_test_array_of_objects();
+static test_result_t new_api_test();
 
 
 /* test suite declaration and initialization */
@@ -47,7 +48,8 @@ const test_case_t test_suite[] = {
         REGISTER_TEST_CASE(yajp_deserialize_json_test_matrix_of_primitives, 5, yajp_deserialize_json_string, "where JSON values are 2-dimension array of primitive values"),
         REGISTER_TEST_CASE(yajp_deserialize_json_test_cube_of_primitives, 6, yajp_deserialize_json_string, "where JSON values are 3-dimensions array of primitive values"),
         REGISTER_TEST_CASE(yajp_deserialize_json_test_inherited_object, 7, yajp_deserialize_json_string, "where JSON values are objects"),
-        REGISTER_TEST_CASE(yajp_deserialize_json_test_array_of_objects, 8, yajp_deserialize_json_string, "where JSON values are arrays of objects")
+        REGISTER_TEST_CASE(yajp_deserialize_json_test_array_of_objects, 8, yajp_deserialize_json_string, "where JSON values are arrays of objects"),
+        REGISTER_TEST_CASE(new_api_test, 9, yajp_deserialize_json_string, "with new convenient API")
 };
 
 /* test suite tests count declaration and initialization */
@@ -569,4 +571,29 @@ static test_result_t yajp_deserialize_json_test_array_of_objects() {
 
 #undef arr_cnt
     return TEST_RESULT_PASSED;
+}
+
+static test_result_t new_api_test() {
+    typedef struct test_struct {
+        int field1;
+        int field;
+    } test_struct_t;
+
+    yajp_deserialization_action_t action;
+    yajp_deserialization_ctx_t ctx;
+    int result = 0;
+
+    // define rules for test_struct.field1
+    #define YAJP_DESERIALIZATION_ACTION                     &action
+    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         result
+
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 YAJP_DESERIALIZATION_OPTIONS_TYPE_NUMBER
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          field
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+    #include <yajp/deserialization_action_initialization.h>
+
+    // end test_struct.field1 rules definition
+
+    test_is_equal(0, result, "");
 }

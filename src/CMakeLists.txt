@@ -52,6 +52,12 @@ list(APPEND YAJP_LIB_SOURCES
 add_library(yajp_lib ${YAJP_LIB_SOURCES})
 add_library(yajp::yajp_lib ALIAS yajp_lib)
 
+list(APPEND YAJP_PUBLIC_HEADERS
+        ${PROJECT_SOURCE_DIR}/include/yajp/deserialization.h
+        ${PROJECT_SOURCE_DIR}/include/yajp/deserialization_routine.h
+        ${PROJECT_SOURCE_DIR}/include/yajp/deserialization_action_initialization.h
+        )
+
 set_target_properties(yajp_lib
         PROPERTIES
             OUTPUT_NAME yajp
@@ -76,11 +82,6 @@ target_compile_definitions(yajp_lib
         )
 
 #install rules
-list(APPEND YAJP_PUBLIC_HEADERS
-        ${PROJECT_SOURCE_DIR}/include/yajp/deserialization.h
-        ${PROJECT_SOURCE_DIR}/include/yajp/deserialization_routine.h
-        )
-
 install(TARGETS yajp_lib
         EXPORT YAJPTargets
         ARCHIVE
