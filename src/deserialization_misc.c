@@ -24,8 +24,8 @@
 
 #include "deserialization_misc.h"
 
-unsigned long yajp_calculate_hash(const uint8_t *data, size_t data_size) {
-    unsigned long hash = 5381;
+int yajp_calculate_hash(const char *data, size_t data_size) {
+    int hash = 5381;
 
     if (NULL == data || 0 == data_size) {
         return 0;
@@ -49,8 +49,8 @@ void yajp_sort_actions_in_context(yajp_deserialization_ctx_t *ctx) {
     }
 }
 
-const yajp_deserialization_action_t *yajp_find_action_in_context(const yajp_deserialization_ctx_t *ctx,
-                                                                 const uint8_t *name, size_t name_size) {
+const yajp_deserialization_action_t *yajp_find_action(const yajp_deserialization_ctx_t *ctx, const uint8_t *name,
+                                                      size_t name_size) {
     const yajp_deserialization_action_t *action = NULL;
     const yajp_deserialization_action_t key = {.field_key = yajp_calculate_hash(name, name_size)};
 
@@ -72,263 +72,6 @@ int yajp_deserialization_ctx_init(yajp_deserialization_action_t *acts, int count
     return 0;
 }
 
-char *yajp_deserialization_result_status_to_str(const yajp_deserialization_result_t *result) {
-#define STR_UNEXPECTED_EOF              "Unexpected end of stream"
-#define STR_DESERIALIZATION_SUCCEED     "Success"
-#define STR_UNRECOGNIZED_TOKEN          "Unrecognized token found"
-
-#ifdef YAJP_TRACK_STREAM
-#define STR_DESERIALIZATION_FAILED  "Failed to deserialize field at line: %d, column: %d"
-#define STR_UNEXPECTED_TOKEN        "Unexpected token found, expected: '%s', found: '%s' at line: %d, column: %d";
-    static const size_t description_len = sizeof(STR_UNEXPECTED_TOKEN) + (7 + 7 + 5 + 5) * sizeof(char);
-#else
-#define STR_DESERIALIZATION_FAILED  "Failed to deserialize field"
-#define STR_UNEXPECTED_TOKEN        "Unexpected token found, expected: '%s', found: '%s'"
-    static const size_t description_len = sizeof(STR_UNEXPECTED_TOKEN) + (7 + 7) * sizeof(char);
-#endif
-
-    char *description = NULL;
-    const char *expected;
-    const char *found;
-
-    if (NULL == (description = malloc(description_len))) {
-        return NULL;
-    }
-
-    if (YAJP_DESERIALIZATION_RESULT_STATUS_OK == result->status) {
-        memmove(description, STR_DESERIALIZATION_SUCCEED, sizeof(STR_DESERIALIZATION_SUCCEED));
-        return description;
-    }
-
-    if (0 != (result->status & YAJP_DESERIALIZATION_RESULT_STATUS_UNEXPECTED_EOF)) {
-        memmove(description, STR_UNEXPECTED_EOF, sizeof(STR_UNEXPECTED_EOF));
-        return description;
-    }
-
-    if (0 != (result->status & YAJP_DESERIALIZATION_RESULT_STATUS_UNRECOGNIZED_TOKEN)) {
-        memmove(description, STR_UNRECOGNIZED_TOKEN, sizeof(STR_UNRECOGNIZED_TOKEN));
-        return description;
-    }
-
-    if (0 != (result->status & YAJP_DESERIALIZATION_RESULT_STATUS_DESERIALIZATION_ERROR)) {
-#ifdef YAJP_TRACK_STREAM
-        snprintf(description, description_len, STR_DESERIALIZATION_FAILED, result->line_num, result->column_num);
-#else
-        snprintf(description, description_len, STR_DESERIALIZATION_FAILED);
-#endif
-        return description;
-    }
-
-    switch (result->status & 0x0F0) {
-        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_OBEGIN:
-            expected = "{";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_OEND:
-            expected = "}";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_ABEGIN:
-            expected = "[";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_AEND:
-            expected = "]";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_FIELD:
-            expected = "field";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_VALUE:
-            expected = "value";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_COMMA:
-            expected = ",";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_EXPECTED_COLON:
-            expected = ":";
-            break;
-        default:
-            expected = "Unknown";
-            break;
-    }
-
-    switch (result->status & 0x00F) {
-        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_OBEGIN:
-            found = "{";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_OEND:
-            found = "}";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_ABEGIN:
-            found = "[";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_AEND:
-            found = "]";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_FIELD:
-            found = "field";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_VALUE:
-            found = "value";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_COMMA:
-            found = ",";
-            break;
-        case YAJP_DESERIALIZATION_RESULT_STATUS_FOUND_COLON:
-            found = ":";
-            break;
-        default:
-            found = "Unknown";
-            break;
-    }
-
-#ifdef YAJP_TRACK_STREAM
-    snprintf(description, description_len, STR_UNEXPECTED_TOKEN, expected, found, result->line_num, result->column_num);
-#else
-    snprintf(description, description_len, STR_UNEXPECTED_TOKEN, expected, found);
-#endif
-
-    return description;
-
-#undef STR_UNEXPECTED_EOF
-#undef STR_DESERIALIZATION_SUCCEED
-#undef STR_DESERIALIZATION_FAILED
-#undef STR_UNEXPECTED_TOKEN
-}
-
-static void yajp_deserialization_action_init_common(const char *field_name,
-                                                    size_t name_size,
-                                                    size_t offset,
-                                                    size_t field_size,
-                                                    yajp_deserialization_action_options_t options,
-                                                    yajp_deserialization_action_t *action) {
-    memset(action, 0, sizeof(*action));
-
-    action->field_key = yajp_calculate_hash(field_name, name_size);
-    action->size = field_size;
-    action->offset = offset;
-    action->options = options;
-}
-
-int yajp_deserialization_action_init(const char *field_name,
-                                     size_t name_size,
-                                     size_t offset,
-                                     size_t field_size,
-                                     yajp_deserialization_action_options_t options,
-                                     yajp_value_setter_t setter,
-                                     yajp_deserialization_action_t *action) {
-
-    yajp_deserialization_action_init_common(field_name, name_size, offset, field_size, options, action);
-
-    switch (options) {
-        case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_PRIMITIVE:
-            action->option_params.primitive_field.setter = setter;
-            action->option_params.primitive_field.allocate = false;
-            break;
-        case (YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING | YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE):
-            action->option_params.primitive_field.allocate = true;
-        case YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_STRING:
-            action->option_params.primitive_field.setter = setter;
-            break;
-        default:
-            return -1;
-    }
-
-    return 0;
-}
-
-int yajp_deserialization_array_action_init(const char *field_name,
-                                           size_t name_size,
-                                           size_t field_offset,
-                                           size_t field_size,
-                                           yajp_deserialization_action_options_t options,
-                                           size_t counter_offset,
-                                           size_t final_dim_offset,
-                                           size_t rows_offset,
-                                           size_t elem_size,
-                                           size_t elems_offset,
-                                           yajp_value_setter_t setter,
-                                           yajp_deserialization_action_t *action) {
-
-    yajp_deserialization_action_init_common(field_name, name_size, field_offset, field_size, options, action);
-
-    if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_TYPE_ARRAY_OF) {
-        action->option_params.array_field.setter = setter;
-
-        action->option_params.array_field.counter_offset = counter_offset;
-
-        action->option_params.array_field.final_dym_offset = final_dim_offset;
-
-        action->option_params.array_field.rows_offset = rows_offset;
-
-        action->option_params.array_field.elems_offset = elems_offset;
-        action->option_params.array_field.elem_size = elem_size;
-
-        if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE) {
-            action->option_params.array_field.allocate = true;
-        }
-        if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE_ELEMENTS) {
-            action->option_params.array_field.allocate_elems = true;
-        }
-
-        return 0;
-    }
-
-    return -1;
-}
-
-int yajp_deserialization_object_action_init(const char *field_name,
-                                            size_t name_size,
-                                            size_t field_offset,
-                                            size_t field_size,
-                                            yajp_deserialization_action_options_t options,
-                                            const yajp_deserialization_ctx_t *ctx,
-                                            yajp_deserialization_action_t *action) {
-
-    yajp_deserialization_action_init_common(field_name, name_size, field_offset, field_size, options, action);
-
-    if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE) {
-        action->option_params.object_filed.allocate = true;
-    }
-
-    action->option_params.object_filed.ctx = ctx;
-
-    return 0;
-}
-
-int yajp_deserialization_array_object_action_init(const char *field_name,
-                                                  size_t name_size,
-                                                  size_t field_offset,
-                                                  size_t field_size,
-                                                  yajp_deserialization_action_options_t options,
-                                                  size_t counter_offset,
-                                                  size_t final_dim_offset,
-                                                  size_t rows_offset,
-                                                  size_t elem_size,
-                                                  size_t elems_offset,
-                                                  const yajp_deserialization_ctx_t *ctx,
-                                                  yajp_deserialization_action_t *action) {
-
-    yajp_deserialization_action_init_common(field_name, name_size, field_offset, field_size, options, action);
-
-    action->option_params.array_of_objects_field.ctx = ctx;
-
-    action->option_params.array_of_objects_field.counter_offset = counter_offset;
-
-    action->option_params.array_of_objects_field.final_dym_offset = final_dim_offset;
-
-    action->option_params.array_of_objects_field.rows_offset = rows_offset;
-
-    action->option_params.array_of_objects_field.elems_offset = elems_offset;
-    action->option_params.array_of_objects_field.elem_size = elem_size;
-
-    if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE) {
-        action->option_params.array_of_objects_field.allocate = true;
-    }
-    if (options & YAJP_DESERIALIZATION_ACTION_OPTIONS_ALLOCATE_ELEMENTS) {
-        action->option_params.array_of_objects_field.allocate_elems = true;
-    }
-
-    return 0;
-}
-
 int a_yajp_deserialization_action_init(const char *name,
                                        size_t name_size,
                                        size_t field_offset,
@@ -342,5 +85,29 @@ int a_yajp_deserialization_action_init(const char *name,
                                        yajp_value_setter_t setter,
                                        const yajp_deserialization_ctx_t *ctx,
                                        yajp_deserialization_action_t *result) {
+
+    result->options = options;
+    result->field_key = yajp_calculate_hash(name, name_size);
+    result->field_size = field_size;
+    result->field_offset = field_offset;
+
+    result->allocate = options & (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE | YAJP_DESERIALIZATION_TYPE_NULLABLE);
+    result->allocate_elems = options & YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS;
+
+    if (options & YAJP_DESERIALIZATION_TYPE_ARRAY_OF) {
+        result->counter_offset = counter_offset;
+        result->final_dym_offset = final_dim_offset;
+        result->rows_offset = rows_offset;
+        result->elems_offset = elems_offset;
+
+    }
+
+    result->elem_size = (options & (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_STRING))
+            ? elem_size
+            : 0;
+
+    result->ctx = ctx;
+    result->setter = setter;
+
     return 0;
 }

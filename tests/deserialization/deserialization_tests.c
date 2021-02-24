@@ -587,7 +587,7 @@ static test_result_t new_api_test() {
     #define YAJP_DESERIALIZATION_ACTION                     &action
     #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         result
 
-    #define YAJP_DESERIALIZATION_FIELD_TYPE                 YAJP_DESERIALIZATION_OPTIONS_TYPE_NUMBER
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 YAJP_DESERIALIZATION_TYPE_NUMBER
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          field
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
