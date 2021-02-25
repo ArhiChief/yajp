@@ -99,7 +99,6 @@ int yajp_deserialization_action_init(const char *name,
         result->final_dym_offset = final_dim_offset;
         result->rows_offset = rows_offset;
         result->elems_offset = elems_offset;
-
     }
 
     result->elem_size = (options & (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_STRING))
