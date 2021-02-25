@@ -105,8 +105,15 @@ int yajp_deserialization_action_init(const char *name,
             ? elem_size
             : 0;
 
-    result->ctx = ctx;
-    result->setter = setter;
+    if ((NULL == setter) ^ (NULL == ctx)) {
+        if (setter) {
+            result->setter = setter;
+        } else {
+            result->ctx = ctx;
+        }
+    } else {
+        return -1;
+    }
 
     return 0;
 }
