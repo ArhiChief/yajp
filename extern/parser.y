@@ -35,8 +35,8 @@ pair_value  ::= COLON value.
 
 pair        ::= pair_key pair_value.		{ entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_PAIR; }
 
-arr_begin   ::= ABEGIN.				{ entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_ABEGIN; }
-arr_end     ::= AEND.				{ entity->type = YAJP_PARSER_RECOGNIZED_ENTITY_TYPE_AEND; }
+arr_begin   ::= ABEGIN.
+arr_end     ::= AEND.
 
 arr         ::= arr_begin arr_content arr_end.
 arr         ::= arr_begin arr_end.
