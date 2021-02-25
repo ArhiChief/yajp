@@ -19,6 +19,7 @@
  */
 
 #include <yajp/deserialization.h>
+
 do {
 #define YAJP_DESERIALIZATION_GET_FIELD_NAME_SIZE(str)   ((sizeof((str)) / sizeof(*(str)) - 1) * sizeof(*(str)))
 #define YAJP_DESERIALIZATION_STRINGIFY2(str)            #str
@@ -153,8 +154,7 @@ do {
 #endif
 
 #ifdef YAJP_DESERIALIZATION_ACTION_INIT_RESULT
-    YAJP_DESERIALIZATION_ACTION_INIT_RESULT =
-        a_yajp_deserialization_action_init(
+    YAJP_DESERIALIZATION_ACTION_INIT_RESULT = yajp_deserialization_action_init(
             YAJP_DESERIALIZATION_FIELD_NAME,                                    // name
             YAJP_DESERIALIZATION_FIELD_NAME_SIZE,                               // name_size
             YAJP_DESERIALIZATION_ACTION_INIT_FIELD_OFFSET,                      // field_offset
@@ -170,7 +170,7 @@ do {
             YAJP_DESERIALIZATION_ACTION                                         // result
         );
 #else
-    a_yajp_deserialization_action_init(
+    yajp_deserialization_action_init(
         YAJP_DESERIALIZATION_FIELD_NAME,                                        // name
         YAJP_DESERIALIZATION_FIELD_NAME_SIZE,                                   // name_size
         YAJP_DESERIALIZATION_ACTION_INIT_FIELD_OFFSET,                          // field_offset

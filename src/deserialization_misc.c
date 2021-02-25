@@ -72,7 +72,7 @@ int yajp_deserialization_ctx_init(yajp_deserialization_action_t *acts, int count
     return 0;
 }
 
-int a_yajp_deserialization_action_init(const char *name,
+int yajp_deserialization_action_init(const char *name,
                                        size_t name_size,
                                        size_t field_offset,
                                        size_t field_size,
