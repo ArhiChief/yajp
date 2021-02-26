@@ -35,10 +35,10 @@ typedef struct yajp_deserialization_data {
 } yajp_deserialization_data_t;
 
 // function prototypes
-static int yajp_parse(yajp_deserialization_data_t *data, const yajp_deserialization_ctx_t *ctx, void *address);
+static int yajp_parse(yajp_deserialization_data_t *data, const yajp_deserialization_context_t *ctx, void *address);
 
 static int yajp_deserialize_value(yajp_deserialization_data_t *data,
-                                  const yajp_deserialization_ctx_t *ctx,
+                                  const yajp_deserialization_context_t *ctx,
                                   const yajp_lexer_token_t *name,
                                   void *deserializing_struct);
 
@@ -46,35 +46,35 @@ static int yajp_skip_json_object(yajp_deserialization_data_t *data);
 
 static int yajp_parse_primitive_value(yajp_deserialization_data_t *data,
                                       const yajp_lexer_token_t *name,
-                                      const yajp_deserialization_action_t *action,
+                                      const yajp_deserialization_rule_t *action,
                                       void *address);
 
 static int yajp_parse_array_value(yajp_deserialization_data_t *data,
                                   const yajp_lexer_token_t *name,
-                                  const yajp_deserialization_action_t *action,
+                                  const yajp_deserialization_rule_t *action,
                                   void *address);
 
 static int yajp_parse_array_value_internal(yajp_deserialization_data_t *data,
                                            const yajp_lexer_token_t *name,
-                                           const yajp_deserialization_action_t *action,
+                                           const yajp_deserialization_rule_t *action,
                                            void *address);
 
 static int yajp_parse_object_value(yajp_deserialization_data_t *data,
-                                   const yajp_deserialization_action_t *action,
+                                   const yajp_deserialization_rule_t *action,
                                    void *address);
 
 static int yajp_parse_array_of_objects_value(yajp_deserialization_data_t *data,
-                                             const yajp_deserialization_action_t *action,
+                                             const yajp_deserialization_rule_t *action,
                                              void *address);
 
 static int yajp_parse_array_of_objects_value_internal(yajp_deserialization_data_t *data,
-                                                      const yajp_deserialization_action_t *action,
+                                                      const yajp_deserialization_rule_t *action,
                                                       void *address);
 
 
 
 
-int yajp_deserialize_json_string(const char *json, size_t json_size, const yajp_deserialization_ctx_t *ctx,
+int yajp_deserialize_json_string(const char *json, size_t json_size, const yajp_deserialization_context_t *ctx,
                                  void *address, void *user_data) {
     FILE *json_stream;
     void *parser;
@@ -120,18 +120,17 @@ int yajp_deserialize_json_string(const char *json, size_t json_size, const yajp_
     }
 #endif
 
-    yajp_parser_finalize(deserialization_data.parser);
-    yajp_parser_release(deserialization_data.parser, free);
+    yajp_parser_release(parser, free);
 
-    release_lexer:
+release_lexer:
     yajp_lexer_release_input(&lexer_input);
-    release_stream:
+release_stream:
     fclose(json_stream);
-    end:
+end:
     return result;
 }
 
-int yajp_deserialize_json_stream(FILE *json, const yajp_deserialization_ctx_t *ctx, void *address, void *user_data) {
+int yajp_deserialize_json_stream(FILE *json, const yajp_deserialization_context_t *ctx, void *address, void *user_data) {
     void *parser;
     yajp_lexer_input_t lexer_input;
     int result;
@@ -167,22 +166,23 @@ int yajp_deserialize_json_stream(FILE *json, const yajp_deserialization_ctx_t *c
     }
 #endif
 
-    yajp_parser_finalize(parser);
     yajp_parser_release(parser, free);
 
-    release_lexer:
+release_lexer:
     yajp_lexer_release_input(&lexer_input);
-    end:
+end:
     return result;
 }
 
-static int yajp_parse(yajp_deserialization_data_t *data, const yajp_deserialization_ctx_t *ctx, void *address) {
+static int yajp_parse(yajp_deserialization_data_t *data, const yajp_deserialization_context_t *ctx, void *address) {
 #define TOKENS_CNT 3
     yajp_lexer_token_t tokens[TOKENS_CNT];
     yajp_lexer_token_t *current_token;
     yajp_token_type_t last_token;
     yajp_parser_recognized_entity_t recognized_entity;
     int i = 0, ret, result = 0;
+
+    memset(tokens, 0, sizeof(tokens));
 
     do {
         current_token = &tokens[i % TOKENS_CNT];
@@ -223,9 +223,9 @@ end:
 #undef TOKENS_CNT
 }
 
-static int yajp_deserialize_value(yajp_deserialization_data_t *data, const yajp_deserialization_ctx_t *ctx,
+static int yajp_deserialize_value(yajp_deserialization_data_t *data, const yajp_deserialization_context_t *ctx,
                                   const yajp_lexer_token_t *name, void *address) {
-    const yajp_deserialization_action_t *action;
+    const yajp_deserialization_rule_t *action;
     int result;
 
     action = yajp_find_action(ctx, name->attributes.value, name->attributes.value_size);
@@ -263,13 +263,15 @@ static int yajp_deserialize_value(yajp_deserialization_data_t *data, const yajp_
 }
 
 static int yajp_parse_primitive_value(yajp_deserialization_data_t *data, const yajp_lexer_token_t *name,
-                                      const yajp_deserialization_action_t *action, void *address) {
+                                      const yajp_deserialization_rule_t *action, void *address) {
 #define TOKENS_CNT 2 // 2 tokens should be enough to handle value and wait until parser recognize pair
     yajp_lexer_token_t tokens[TOKENS_CNT];
     yajp_lexer_token_t *current_token;
     yajp_parser_recognized_entity_t recognized_entity;
     size_t allocation_size;
     int i = 0, setter_result, result = 0;
+
+    memset(tokens, 0, sizeof(tokens));
 
     do {
         current_token = &tokens[i];
@@ -383,7 +385,7 @@ static int yajp_skip_json_object(yajp_deserialization_data_t *data) {
 }
 
 static int yajp_parse_array_value(yajp_deserialization_data_t *data, const yajp_lexer_token_t *name,
-                                  const yajp_deserialization_action_t *action, void *address) {
+                                  const yajp_deserialization_rule_t *action, void *address) {
     yajp_lexer_token_t current_token;
     yajp_parser_recognized_entity_t recognized_entity;
     int result;
@@ -421,7 +423,7 @@ static int yajp_parse_array_value(yajp_deserialization_data_t *data, const yajp_
 }
 
 static int yajp_parse_array_value_internal(yajp_deserialization_data_t *data, const yajp_lexer_token_t *name,
-                                           const yajp_deserialization_action_t *action, void *address) {
+                                           const yajp_deserialization_rule_t *action, void *address) {
 #define TOKEN_CNT 3
     yajp_lexer_token_t tokens[TOKEN_CNT];
     yajp_lexer_token_t *current_token;
@@ -529,7 +531,7 @@ static int yajp_parse_array_value_internal(yajp_deserialization_data_t *data, co
 #undef TOKENS_CNT
 }
 
-static int yajp_parse_object_value(yajp_deserialization_data_t *data, const yajp_deserialization_action_t *action,
+static int yajp_parse_object_value(yajp_deserialization_data_t *data, const yajp_deserialization_rule_t *action,
                                    void *address) {
     int result;
 
@@ -555,7 +557,7 @@ static int yajp_parse_object_value(yajp_deserialization_data_t *data, const yajp
     return result;
 }
 
-static int yajp_parse_array_of_objects_value(yajp_deserialization_data_t *data, const yajp_deserialization_action_t *action,
+static int yajp_parse_array_of_objects_value(yajp_deserialization_data_t *data, const yajp_deserialization_rule_t *action,
                                              void *address) {
     yajp_lexer_token_t current_token;
     yajp_parser_recognized_entity_t recognized_entity;
@@ -594,7 +596,7 @@ static int yajp_parse_array_of_objects_value(yajp_deserialization_data_t *data, 
 }
 
 static int yajp_parse_array_of_objects_value_internal(yajp_deserialization_data_t *data,
-                                                      const yajp_deserialization_action_t *action, void *address) {
+                                                      const yajp_deserialization_rule_t *action, void *address) {
 #define TOKEN_CNT 3
     int result = 0;
     yajp_lexer_token_t tokens[TOKEN_CNT];

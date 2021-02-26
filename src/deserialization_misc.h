@@ -39,7 +39,7 @@ int yajp_calculate_hash(const char *data, size_t data_size);
  *
  * @param ctx
  */
-void yajp_sort_actions_in_context(yajp_deserialization_ctx_t *ctx);
+void yajp_sort_actions_in_context(yajp_deserialization_context_t *ctx);
 
 /**
  *
@@ -48,7 +48,7 @@ void yajp_sort_actions_in_context(yajp_deserialization_ctx_t *ctx);
  * @param name_size
  * @return
  */
-const yajp_deserialization_action_t *yajp_find_action(const yajp_deserialization_ctx_t *ctx, const uint8_t *name,
-                                                      size_t name_size);
+const yajp_deserialization_rule_t *yajp_find_action(const yajp_deserialization_context_t *ctx, const uint8_t *name,
+                                                    size_t name_size);
 
 #endif //YAJP_DESERIALIZATION_MISC_H

@@ -39,52 +39,52 @@ int yajp_calculate_hash(const char *data, size_t data_size) {
 }
 
 static int actions_comparator(const void *pkey, const void *pelem) {
-    return ((const yajp_deserialization_action_t *) pkey)->field_key -
-           ((const yajp_deserialization_action_t *) pelem)->field_key;
+    return ((const yajp_deserialization_rule_t *) pkey)->field_key -
+           ((const yajp_deserialization_rule_t *) pelem)->field_key;
 }
 
-void yajp_sort_actions_in_context(yajp_deserialization_ctx_t *ctx) {
-    if (NULL != ctx->actions && 1 < ctx->actions_cnt) {
-        qsort(ctx->actions, ctx->actions_cnt, sizeof(*ctx->actions), actions_comparator);
+void yajp_sort_actions_in_context(yajp_deserialization_context_t *ctx) {
+    if (NULL != ctx->rules && 1 < ctx->rules_cnt) {
+        qsort(ctx->rules, ctx->rules_cnt, sizeof(*ctx->rules), actions_comparator);
     }
 }
 
-const yajp_deserialization_action_t *yajp_find_action(const yajp_deserialization_ctx_t *ctx, const uint8_t *name,
-                                                      size_t name_size) {
-    const yajp_deserialization_action_t *action = NULL;
-    const yajp_deserialization_action_t key = {.field_key = yajp_calculate_hash(name, name_size)};
+const yajp_deserialization_rule_t *yajp_find_action(const yajp_deserialization_context_t *ctx, const uint8_t *name,
+                                                    size_t name_size) {
+    const yajp_deserialization_rule_t *action = NULL;
+    const yajp_deserialization_rule_t key = {.field_key = yajp_calculate_hash(name, name_size)};
 
-    if (NULL != ctx && NULL != ctx->actions && 0 < ctx->actions_cnt) {
-        action = bsearch(&key, ctx->actions, ctx->actions_cnt, sizeof(*ctx->actions), actions_comparator);
+    if (NULL != ctx && NULL != ctx->rules && 0 < ctx->rules_cnt) {
+        action = bsearch(&key, ctx->rules, ctx->rules_cnt, sizeof(*ctx->rules), actions_comparator);
     }
 
     return action;
 }
 
-int yajp_deserialization_ctx_init(yajp_deserialization_action_t *acts, int count, yajp_deserialization_ctx_t *ctx) {
+int yajp_deserialization_context_init(yajp_deserialization_rule_t *acts, int count, yajp_deserialization_context_t *ctx) {
     memset(ctx, 0, sizeof(*ctx));
 
-    ctx->actions = acts;
-    ctx->actions_cnt = count;
+    ctx->rules = acts;
+    ctx->rules_cnt = count;
 
     yajp_sort_actions_in_context(ctx);
 
     return 0;
 }
 
-int yajp_deserialization_action_init(const char *name,
-                                       size_t name_size,
-                                       size_t field_offset,
-                                       size_t field_size,
-                                       int options,
-                                       size_t counter_offset,
-                                       size_t final_dim_offset,
-                                       size_t rows_offset,
-                                       size_t elems_offset,
-                                       size_t elem_size,
-                                       yajp_value_setter_t setter,
-                                       const yajp_deserialization_ctx_t *ctx,
-                                       yajp_deserialization_action_t *result) {
+int yajp_deserialization_rule_init(const char *name,
+                                   size_t name_size,
+                                   size_t field_offset,
+                                   size_t field_size,
+                                   int options,
+                                   size_t counter_offset,
+                                   size_t final_dim_offset,
+                                   size_t rows_offset,
+                                   size_t elems_offset,
+                                   size_t elem_size,
+                                   yajp_value_setter_t setter,
+                                   const yajp_deserialization_context_t *ctx,
+                                   yajp_deserialization_rule_t *result) {
 
     result->options = options;
     result->field_key = yajp_calculate_hash(name, name_size);

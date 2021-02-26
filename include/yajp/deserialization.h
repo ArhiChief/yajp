@@ -26,40 +26,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/**
- *  Prototype of function used to convert string value into structure field type
- *
- *  @param[in]      name        Pointer to string with name of field
- *  @param[in]      name_size   Size of field name string in bytes
- *  @param[in]      value       Pointer to string with field value
- *  @param[in]      value_size  Size of value string in bytes
- *  @param[out]     field       Pointer to field in structure
- *  @param[in, out] user_data   Pointer to user data passed as parameter to deserialization functions
- */
-typedef int (*yajp_value_setter_t)(const uint8_t *name,
-                                   size_t name_size,
-                                   const uint8_t *value,
-                                   size_t value_size,
-                                   void *field,
-                                   void *user_data
-);
-
-
-
-struct yajp_deserialization_ctx;
-struct yajp_deserialization_action;
-
-typedef struct yajp_deserialization_ctx yajp_deserialization_ctx_t;
-typedef struct yajp_deserialization_action yajp_deserialization_action_t;
-
-/**
- * Deserialization context
- */
-struct yajp_deserialization_ctx {
-   int actions_cnt;
-   yajp_deserialization_action_t *actions;
-};
-
 
 /**
  * @details     @c YAJP_DESERIALIZATION_FIELD_TYPE declaration value used to specify that deserializing type is number (integral or real)
@@ -95,7 +61,7 @@ struct yajp_deserialization_ctx {
 /**
  * @details. Deserialization option. Tels YAJP what value for field should be allocated on heap
  *
- * @note    Field in structure should be represented as pointer. Otherwise compilation error will occur
+ * @note    Field in structure must be represented as pointer. Otherwise compilation error will occur
  */
 #define YAJP_DESERIALIZATION_OPTIONS_ALLOCATE           0b01000000
 /**
@@ -106,34 +72,67 @@ struct yajp_deserialization_ctx {
 
 
 /**
+ *  Prototype of function used to convert string value into structure field type
+ *
+ *  @param[in]      name        Pointer to string with name of field
+ *  @param[in]      name_size   Size of field name string in bytes
+ *  @param[in]      value       Pointer to string with field value
+ *  @param[in]      value_size  Size of value string in bytes
+ *  @param[out]     field       Pointer to field in structure
+ *  @param[in, out] user_data   Pointer to user data passed as parameter to deserialization functions
+ */
+typedef int (*yajp_value_setter_t)(const uint8_t *name,
+                                   size_t name_size,
+                                   const uint8_t *value,
+                                   size_t value_size,
+                                   void *field,
+                                   void *user_data
+);
+
+struct yajp_deserialization_context;
+struct yajp_deserialization_rule;
+
+typedef struct yajp_deserialization_context yajp_deserialization_context_t;
+typedef struct yajp_deserialization_rule yajp_deserialization_rule_t;
+
+/**
+ * Deserialization context
+ */
+struct yajp_deserialization_context {
+   int rules_cnt;
+   yajp_deserialization_rule_t *rules;
+};
+
+/**
  * Description of deserialization action
  */
-struct yajp_deserialization_action {
-    int field_key;                              // hash of field used for fast search
+struct yajp_deserialization_rule {
+    int field_key;                                  // hash of field used for fast search
 
-    size_t field_offset;                        // offset of field in structure
-    size_t field_size;                          // size of field
+    size_t field_offset;                            // offset of field in structure
+    size_t field_size;                              // size of field
 
-    int options;                                // deserialization options
+    int options;                                    // deserialization options
 
-    bool allocate;                              // memory allocation required for this deserializing field
-    bool allocate_elems;                        // allocation for array values needed
+    bool allocate;                                  // memory allocation required for this deserializing field
+    bool allocate_elems;                            // allocation for array values needed
 
-    size_t counter_offset;                      // offset of counter
-    size_t rows_offset;                         // offset of rows array
-    size_t elems_offset;                        // offset of array values
-    size_t final_dym_offset;                    // offset of final_dim flag
-    size_t elem_size;                           // size of array element
+    size_t counter_offset;                          // offset of counter
+    size_t rows_offset;                             // offset of rows array
+    size_t elems_offset;                            // offset of array values
+    size_t final_dym_offset;                        // offset of final_dim flag
+    size_t elem_size;                               // size of array element
 
     union {
-        yajp_value_setter_t setter;             // pointer to setter function
-        const yajp_deserialization_ctx_t *ctx;  // deserialization context
+        yajp_value_setter_t setter;                 // pointer to setter function
+        const yajp_deserialization_context_t *ctx;  // deserialization context
     };
 };
 
 
 /**
- * @details     Initialize instance of deserialization action for field in deserializing structure.
+ * @details Initialize instance of deserialization action for field in deserializing structure.
+ *
  *
  * @param [in]  name                Name of field in JSON stream
  * @param [in]  name_size           Size of field in JSON stream without '\0' in bytes
@@ -157,19 +156,19 @@ struct yajp_deserialization_action {
  * @note    Value in @b elem_size should be size in bytes of string character in case of string deserialization or size
  *          of array item in case of array deserialization
  */
-int yajp_deserialization_action_init(const char *name,
-                                     size_t name_size,
-                                     size_t field_offset,
-                                     size_t field_size,
-                                     int options,
-                                     size_t counter_offset,
-                                     size_t final_dim_offset,
-                                     size_t rows_offset,
-                                     size_t elems_offset,
-                                     size_t elem_size,
-                                     yajp_value_setter_t setter,
-                                     const yajp_deserialization_ctx_t *ctx,
-                                     yajp_deserialization_action_t *result);
+int yajp_deserialization_rule_init(const char *name,
+                                   size_t name_size,
+                                   size_t field_offset,
+                                   size_t field_size,
+                                   int options,
+                                   size_t counter_offset,
+                                   size_t final_dim_offset,
+                                   size_t rows_offset,
+                                   size_t elems_offset,
+                                   size_t elem_size,
+                                   yajp_value_setter_t setter,
+                                   const yajp_deserialization_context_t *ctx,
+                                   yajp_deserialization_rule_t *result);
 
 /**
  * Initialize deserialization context
@@ -178,18 +177,18 @@ int yajp_deserialization_action_init(const char *name,
  * @param[out]  ctx     Pointer to initializing deserialization context
  * @return      Result of deserialization context initialization. 0 on success
  */
-int yajp_deserialization_ctx_init(yajp_deserialization_action_t *acts, int count, yajp_deserialization_ctx_t *ctx);
+int yajp_deserialization_context_init(yajp_deserialization_rule_t *acts, int count, yajp_deserialization_context_t *ctx);
 
 /**
  * Deserialize JSON stream into provided structure
  * @param[in]   json                    Pointer to JSON stream
  * @param[in]   ctx                     Pointer to deserialization context
  * @param[out]  deserializing_struct    Pointer to deserializing structure
- * @param[in]   user_data               Pointer to value what will be passed as \c user_data to \c setter in \c yajp_deserialization_action_init
+ * @param[in]   user_data               Pointer to value what will be passed as \c user_data to \c setter in \c yajp_deserialization_rule_init
  * @return      Result of deserialization process. See \c yajp_deserialization_result_t for details
  */
 int yajp_deserialize_json_stream(FILE *json,
-                                 const yajp_deserialization_ctx_t *ctx,
+                                 const yajp_deserialization_context_t *ctx,
                                  void *deserializing_struct,
                                  void *user_data);
 
@@ -199,14 +198,14 @@ int yajp_deserialize_json_stream(FILE *json,
  * @param[in]   json_size               Size in bytes of deserializing JSON string
  * @param[in]   ctx                     Pointer to deserialization context
  * @param[out]  deserializing_struct    Pointer to deserializing structure
- * @param[in]   user_data               Pointer to value what will be passed as \c user_data to \c setter in \c yajp_deserialization_action_init
+ * @param[in]   user_data               Pointer to value what will be passed as \c user_data to \c setter in \c yajp_deserialization_rule_init
  * @return      Result of deserialization process. See \c yajp_deserialization_result_t for details
  *
  * @note    This function wraps passed JSON string into \c FILE using \c fmemopen call from \c stdio.h
  */
 int yajp_deserialize_json_string(const char *json,
                                  size_t json_size,
-                                 const yajp_deserialization_ctx_t *ctx,
+                                 const yajp_deserialization_context_t *ctx,
                                  void *deserializing_struct,
                                  void *user_data);
 
@@ -217,44 +216,13 @@ int yajp_deserialize_json_string(const char *json,
  * Generic function to initialize deserialization action for arrays
  *
  * @details
- * Array deserialization is a complex process because nigher size of array, nor amount of array dimensions is unknown
- * until deserialization ends. Even if user knows array parameters it's impossible to make it more easier because JSON
- * supports arrays with non-constant amount of elements in each dimensions. To cover this case, YAJP expects that
- * deserializing array will be represented as a struct used to hold dynamic arrays, similar to something like this:
+ *
  * @code
- *  typedef struct test_struct_arr test_struct_arr_t;
- *  struct test_struct_arr {
- *      union {  // union here can be replaced with struct if you want. Union is used to reduce amount of space
- *          int *elems; // pointer to array used to store deserializing array values
- *          test_struct_arr_t *rows; // pointer to rows if array is multidimensional
- *       };
- *       bool final_dim; // flag used to determine what structure holds array values. `false` if struct holds rows
- *       size_t count; // amount of items in `elems` or `rows`
- *   };
+ *
  * @endcode
- * `final_dim` require additional attention. In case if YAJP deserializing matrix (2-dim array) next peace of code should
- * works fine:
+ *
  * @code
- * typedef struct {
- *  test_struct_arr_t arr;
- * } deserializing_struct_t;
  *
- * // field declaration
- * deserializing_struct_t test_struct;
- *
- * // general deserialization routines
- *
- * rows_count = test_struct.arr.count;   // will show amount of rows in matrix
- *
- * for (i = 0; i < rows_count; i++) {   // traverse matrix
- *  assert(test_struct.arr.final_dim == false);
- *  columns_count = test_struct.arr.rows[i].count; // amount of elements in row
- *  assert(test_struct.arr.rows[i].final_dim == true);
- *  for (int j = 0; j < columns_count; j++) {
- *      // do whatever we want with matrix element
- *      value = test_struct.arr.rows[i].elems[j];
- *  }
- * }
  * @endcode
  *
  * @param[in]   field_name          Name of field in JSON stream

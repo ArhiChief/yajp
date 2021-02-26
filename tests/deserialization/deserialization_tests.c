@@ -71,10 +71,10 @@ static test_result_t yajp_deserialize_json_test_primitive_fields() {
                              "}";
     static const size_t js_size = sizeof(js);
 
-    yajp_deserialization_ctx_t ctx;
+    yajp_deserialization_context_t ctx;
 
     int ret;
-    yajp_deserialization_action_t actions[4] = { 0 };
+    yajp_deserialization_rule_t actions[4] = {0 };
     test_struct_t test_struct = {
             .int_field1 = INT16_MAX,
             .double_field = -332.112,
@@ -87,8 +87,8 @@ static test_result_t yajp_deserialize_json_test_primitive_fields() {
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          int_field1
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[0]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -99,8 +99,8 @@ static test_result_t yajp_deserialize_json_test_primitive_fields() {
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          short_field
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_short
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[1]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -110,8 +110,8 @@ static test_result_t yajp_deserialize_json_test_primitive_fields() {
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          double_field
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_double
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[2]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[2]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -121,13 +121,13 @@ static test_result_t yajp_deserialize_json_test_primitive_fields() {
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          bool_field
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_BOOLEAN)
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_bool
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[3]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[3]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
 
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
@@ -156,9 +156,9 @@ static test_result_t yajp_deserialize_json_test_string_fields() {
 
     static const char js[] = "{\"string1\":\""str1"\",\"other_string\":\""str2"\",\"string3\":\""str3"\",\"unused_string\":\"unused string\",\"other_string2\":\""str4"\"}";
     static const size_t js_size = sizeof(js);
-    yajp_deserialization_ctx_t ctx;
+    yajp_deserialization_context_t ctx;
     int ret;
-    yajp_deserialization_action_t actions[4] = { 0 };
+    yajp_deserialization_rule_t actions[4] = {0 };
     test_struct_t test_struct = { 0 };
 
     // declare rules for test_struct_t.string1
@@ -166,8 +166,8 @@ static test_result_t yajp_deserialize_json_test_string_fields() {
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          string1
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_STRING)
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[0]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -179,8 +179,8 @@ static test_result_t yajp_deserialize_json_test_string_fields() {
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_STRING)
     #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[1]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -190,8 +190,8 @@ static test_result_t yajp_deserialize_json_test_string_fields() {
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          string3
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_STRING)
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[2]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[2]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -203,13 +203,13 @@ static test_result_t yajp_deserialize_json_test_string_fields() {
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_STRING)
     #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[3]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[3]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
 
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
@@ -269,9 +269,9 @@ static test_result_t yajp_deserialize_json_test_array_of_primitives_field() {
     static const int arr3[] = { -1, -2, -3, -4, -5, -62 };
     static const int arr4[] = { -10, -20, -32, -1, -44, -5, -66 };
 
-    yajp_deserialization_ctx_t ctx;
+    yajp_deserialization_context_t ctx;
     int ret;
-    yajp_deserialization_action_t actions[4] = { 0 };
+    yajp_deserialization_rule_t actions[4] = {0 };
     test_struct_t test_struct = { 0 };
 
     // declare rules for test_struct_t.arr1
@@ -287,8 +287,8 @@ static test_result_t yajp_deserialize_json_test_array_of_primitives_field() {
     #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
     #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[0]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -306,8 +306,8 @@ static test_result_t yajp_deserialize_json_test_array_of_primitives_field() {
     #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
     #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[1]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -324,8 +324,8 @@ static test_result_t yajp_deserialize_json_test_array_of_primitives_field() {
     #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
     #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[2]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[2]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -343,13 +343,13 @@ static test_result_t yajp_deserialize_json_test_array_of_primitives_field() {
     #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
     #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[3]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[3]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
 
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
@@ -394,12 +394,12 @@ static test_result_t yajp_deserialize_json_test_array_of_strings_field() {
     static const char *test_arr[] = {str1, str2, str3, str4};
     static const size_t test_arr_sizes[] = { sizeof(str1), sizeof(str2), sizeof(str3), sizeof(str4) };
 
-    yajp_deserialization_ctx_t ctx;
+    yajp_deserialization_context_t ctx;
     int ret, i;
     size_t test_arr_elem_size;
     const char *test_arr_elem;
     char *test_struct_elem;
-    yajp_deserialization_action_t actions[1];
+    yajp_deserialization_rule_t actions[1];
     test_struct_t test_struct = { 0 };
 
     // declare rules for test_struct_t.arr1
@@ -415,13 +415,13 @@ static test_result_t yajp_deserialize_json_test_array_of_strings_field() {
     #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
     #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[0]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
 
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
@@ -467,8 +467,8 @@ static test_result_t yajp_deserialize_json_test_matrix_of_primitives() {
             { 10, 9, 8, 7, 6 }
     };
     test_struct_t test_struct;
-    yajp_deserialization_ctx_t ctx;
-    yajp_deserialization_action_t actions[1];
+    yajp_deserialization_context_t ctx;
+    yajp_deserialization_rule_t actions[1];
     int i, j, ret;
     int test_arr_elem, test_struct_elem;
 
@@ -485,13 +485,13 @@ static test_result_t yajp_deserialize_json_test_matrix_of_primitives() {
     #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
     #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[0]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
 
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
@@ -547,8 +547,8 @@ static test_result_t yajp_deserialize_json_test_cube_of_primitives() {
             }
     };
 
-    yajp_deserialization_ctx_t ctx;
-    yajp_deserialization_action_t actions[1];
+    yajp_deserialization_context_t ctx;
+    yajp_deserialization_rule_t actions[1];
     int i, j, k, test_arr_elem, test_struct_elem, ret;
     test_struct_t test_struct;
 
@@ -565,13 +565,13 @@ static test_result_t yajp_deserialize_json_test_cube_of_primitives() {
     #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
     #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[0]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
 
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
@@ -622,8 +622,8 @@ static test_result_t yajp_deserialize_json_test_inherited_object() {
     static const int test_arr1[] = {1,2,3};
     static const int test_arr2[] = {-1,-2,-3};
 
-    yajp_deserialization_ctx_t ctx, inner_obj_ctx;
-    yajp_deserialization_action_t actions[2], inner_obj_actions[2];
+    yajp_deserialization_context_t ctx, inner_obj_ctx;
+    yajp_deserialization_rule_t actions[2], inner_obj_actions[2];
     int ret;
 
     test_struct_t test_struct;
@@ -637,8 +637,8 @@ static test_result_t yajp_deserialize_json_test_inherited_object() {
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          f1
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
-    #define YAJP_DESERIALIZATION_ACTION                     &inner_obj_actions[0]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &inner_obj_actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -656,13 +656,13 @@ static test_result_t yajp_deserialize_json_test_inherited_object() {
     #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
     #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    #define YAJP_DESERIALIZATION_ACTION                     &inner_obj_actions[1]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &inner_obj_actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
 
-    ret = yajp_deserialization_ctx_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
+    ret = yajp_deserialization_context_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     // declare rules for test_struct_t.obj1
@@ -672,8 +672,8 @@ static test_result_t yajp_deserialize_json_test_inherited_object() {
 
     #define YAJP_DESERIALIZATION_OBJECT_CONTEXT             &inner_obj_ctx
 
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[0]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -686,13 +686,13 @@ static test_result_t yajp_deserialize_json_test_inherited_object() {
 
     #define YAJP_DESERIALIZATION_OBJECT_CONTEXT             &inner_obj_ctx
 
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[1]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
 
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
@@ -734,8 +734,8 @@ static test_result_t yajp_deserialize_json_test_array_of_objects() {
     static const int f2_vals[arr_cnt][arr_cnt] = { {1,2,3}, {-1,-2,-3}, {11,21,31} };
     inner_object_t *arr_elem;
 
-    yajp_deserialization_ctx_t ctx, inner_obj_ctx;
-    yajp_deserialization_action_t actions[1], inner_obj_actions[2];
+    yajp_deserialization_context_t ctx, inner_obj_ctx;
+    yajp_deserialization_rule_t actions[1], inner_obj_actions[2];
     int ret, i;
     test_struct_t test_struct;
 
@@ -746,8 +746,8 @@ static test_result_t yajp_deserialize_json_test_array_of_objects() {
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          f1
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
     #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
-    #define YAJP_DESERIALIZATION_ACTION                     &inner_obj_actions[0]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &inner_obj_actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
@@ -765,13 +765,13 @@ static test_result_t yajp_deserialize_json_test_array_of_objects() {
     #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
     #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    #define YAJP_DESERIALIZATION_ACTION                     &inner_obj_actions[1]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &inner_obj_actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
 
-    ret = yajp_deserialization_ctx_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
+    ret = yajp_deserialization_context_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     // declare rules for test_struct_t.arr1
@@ -788,13 +788,13 @@ static test_result_t yajp_deserialize_json_test_array_of_objects() {
     #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
     #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    #define YAJP_DESERIALIZATION_ACTION                     &actions[0]
-    #define YAJP_DESERIALIZATION_ACTION_INIT_RESULT         ret
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
     #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
     // ==========================================
 
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
@@ -816,5 +816,10 @@ static test_result_t yajp_deserialize_json_test_array_of_objects() {
     free(test_struct.arr1.elems);
 
 #undef arr_cnt
+    return TEST_RESULT_PASSED;
+}
+
+static test_result_t yajp_deserialize_json_test_full_example() {
+
     return TEST_RESULT_PASSED;
 }
