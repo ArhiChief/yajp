@@ -18,14 +18,12 @@
  * THE SOFTWARE.
  */
 
-
 #ifndef YAJP_DESERIALIZE_H
 #define YAJP_DESERIALIZE_H
 
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-
 
 /**
  * @details     @c YAJP_DESERIALIZATION_FIELD_TYPE declaration value used to specify that deserializing type is number (integral or real)
@@ -69,7 +67,6 @@
  *          YAJP what memory for elements should be allocated on heap. Ignored otherwise
  */
 #define YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS  0b10000000
-
 
 /**
  *  Prototype of function used to convert string value into structure field type
@@ -128,7 +125,6 @@ struct yajp_deserialization_rule {
         const yajp_deserialization_context_t *ctx;  // deserialization context
     };
 };
-
 
 /**
  * @details Initialize instance of deserialization action for field in deserializing structure.
@@ -208,39 +204,5 @@ int yajp_deserialize_json_string(const char *json,
                                  const yajp_deserialization_context_t *ctx,
                                  void *deserializing_struct,
                                  void *user_data);
-
-
-
-/**
- *
- * Generic function to initialize deserialization action for arrays
- *
- * @details
- *
- * @code
- *
- * @endcode
- *
- * @code
- *
- * @endcode
- *
- * @param[in]   field_name          Name of field in JSON stream
- * @param[in]   name_size           Size of field name in JSON without '\0' character
- * @param[in]   field_offset        Offset of field in deserializing structure
- * @param[in]   field_size          Size of field in deserializing structure
- * @param[in]   options             Deserialization options for field in deserialization process
- * @param[in]   counter_offset      Offset of counter field
- * @param[in]   final_dim_offset    Offset to flag used to point that structure points to elements
- * @param[in]   rows_offset         Offset of field used to store other dimensions
- * @param[in]   elem_size           Size of array item
- * @param[in]   elems_offset        Offset of field to store array items
- * @param[in]   setter              Pointer to function used to deserialize JSON value into structure field
- * @param[out]  action              Pointer to initializing deserialization action
- *
- * @return  Result of initialization. 0 on success
- *
- * @note    Using this function is not convenient way. Prefer to use macro wrappers.
- */
 
 #endif // YAJP_DESERIALIZE_H

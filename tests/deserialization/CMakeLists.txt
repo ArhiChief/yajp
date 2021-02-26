@@ -16,3 +16,4 @@ add_test(NAME DeserializationTest5 COMMAND $<TARGET_FILE:deserialization_tests> 
 add_test(NAME DeserializationTest6 COMMAND $<TARGET_FILE:deserialization_tests> 6)
 add_test(NAME DeserializationTest7 COMMAND $<TARGET_FILE:deserialization_tests> 7)
 add_test(NAME DeserializationTest8 COMMAND $<TARGET_FILE:deserialization_tests> 8)
+add_test(NAME DeserializationTest9 COMMAND $<TARGET_FILE:deserialization_tests> 9)
