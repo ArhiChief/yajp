@@ -36,7 +36,7 @@ static test_result_t yajp_deserialize_json_test_matrix_of_primitives();
 static test_result_t yajp_deserialize_json_test_cube_of_primitives();
 static test_result_t yajp_deserialize_json_test_inherited_object();
 static test_result_t yajp_deserialize_json_test_array_of_objects();
-
+static test_result_t yajp_deserialize_json_test_full_example();
 
 /* test suite declaration and initialization */
 const test_case_t test_suite[] = {
@@ -47,7 +47,8 @@ const test_case_t test_suite[] = {
         REGISTER_TEST_CASE(yajp_deserialize_json_test_matrix_of_primitives, 5, yajp_deserialize_json_string, "where JSON values are 2-dimension array of primitive values"),
         REGISTER_TEST_CASE(yajp_deserialize_json_test_cube_of_primitives, 6, yajp_deserialize_json_string, "where JSON values are 3-dimensions array of primitive values"),
         REGISTER_TEST_CASE(yajp_deserialize_json_test_inherited_object, 7, yajp_deserialize_json_string, "where JSON values are objects"),
-        REGISTER_TEST_CASE(yajp_deserialize_json_test_array_of_objects, 8, yajp_deserialize_json_string, "where JSON values are arrays of objects")
+        REGISTER_TEST_CASE(yajp_deserialize_json_test_array_of_objects, 8, yajp_deserialize_json_string, "where JSON values are arrays of objects"),
+        REGISTER_TEST_CASE(yajp_deserialize_json_test_full_example, 9, yajp_deserialize_json_string, "with all possible combinations"),
 };
 
 /* test suite tests count declaration and initialization */
@@ -63,13 +64,19 @@ static test_result_t yajp_deserialize_json_test_primitive_fields() {
         bool bool_field;
     } test_struct_t;
 
-    static const char js[] = "{\"int_field1\":12345,\"double_field\":-1.33,\"other_field\":332,\"bool_field\":true,\"ignored_value\":0}";
+    static const char js[] = "{"
+                             "  \"int_field1\":12345,"
+                             "  \"double_field\":-1.33,"
+                             "  \"other_field\":332,"
+                             "  \"bool_field\":true,"
+                             "  \"ignored_value\":0"
+                             "}";
     static const size_t js_size = sizeof(js);
 
-    yajp_deserialization_ctx_t ctx;
-    yajp_deserialization_result_t dres;
+    yajp_deserialization_context_t ctx;
+
     int ret;
-    yajp_deserialization_action_t actions[4] = { 0 };
+    yajp_deserialization_rule_t actions[4] = {0 };
     test_struct_t test_struct = {
             .int_field1 = INT16_MAX,
             .double_field = -332.112,
@@ -77,24 +84,57 @@ static test_result_t yajp_deserialize_json_test_primitive_fields() {
             .short_field = -122
     };
 
-    ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, int_field1, yajp_set_int, &actions[0]);
+    // declare rules for test_struct_t.int_field1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          int_field1
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+    #define YAJP_DESERIALIZATION_RULE                       &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    ret = YAJP_PRIMITIVE_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT("other_field", test_struct_t, short_field,
-                                                                     yajp_set_short, &actions[1]);
+    // declare rules for test_struct_t.short_field
+    #define YAJP_DESERIALIZATION_FIELD_NAME                 "other_field"
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          short_field
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_short
+    #define YAJP_DESERIALIZATION_RULE                       &actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, double_field, yajp_set_double, &actions[2]);
+    // declare rules for test_struct_t.double_field
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          double_field
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_double
+    #define YAJP_DESERIALIZATION_RULE                       &actions[2]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, bool_field, yajp_set_bool, &actions[3]);
+    // declare rules for test_struct_t.bool_field
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          bool_field
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_BOOLEAN)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_bool
+    #define YAJP_DESERIALIZATION_RULE                       &actions[3]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
-    dres = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    test_is_equal(ret, 0, "Deserialization failed");
 
-    test_is_equal(dres.status, YAJP_DESERIALIZATION_RESULT_STATUS_OK, "Deserialization failed");
     test_is_equal(test_struct.int_field1, 12345, "Structure wasn't deserialized correctly");
     test_is_equal(test_struct.short_field, 332, "Structure wasn't deserialized correctly");
     test_is_equal_prec(test_struct.double_field, -1.33, DOUBLE_PRECISION, "Structure wasn't deserialized correctly");
@@ -118,29 +158,64 @@ static test_result_t yajp_deserialize_json_test_string_fields() {
 
     static const char js[] = "{\"string1\":\""str1"\",\"other_string\":\""str2"\",\"string3\":\""str3"\",\"unused_string\":\"unused string\",\"other_string2\":\""str4"\"}";
     static const size_t js_size = sizeof(js);
-    yajp_deserialization_ctx_t ctx;
-    yajp_deserialization_result_t dres;
+    yajp_deserialization_context_t ctx;
     int ret;
-    yajp_deserialization_action_t actions[4] = { 0 };
+    yajp_deserialization_rule_t actions[4] = {0 };
     test_struct_t test_struct = { 0 };
 
-    ret = YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, string1, yajp_set_string, false, &actions[0]);
+    // declare rules for test_struct_t.string1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          string1
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_STRING)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
+    #define YAJP_DESERIALIZATION_RULE                       &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    ret = YAJP_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT("other_string", test_struct_t, string2, yajp_set_string, true, &actions[1]);
+    // declare rules for test_struct_t.string2
+    #define YAJP_DESERIALIZATION_FIELD_NAME                 "other_string"
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          string2
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_STRING)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
+    #define YAJP_DESERIALIZATION_RULE                       &actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    ret = YAJP_STRING_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, string3, yajp_set_string, false, &actions[2]);
+    // declare rules for test_struct_t.string3
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          string3
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_STRING)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
+    #define YAJP_DESERIALIZATION_RULE                       &actions[2]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    ret = YAJP_STRING_FIELD_OVERWRITE_DESERIALIZATION_ACTION_INIT("other_string2", test_struct_t, string4, yajp_set_string, true, &actions[3]);
+    // declare rules for test_struct_t.string4
+    #define YAJP_DESERIALIZATION_FIELD_NAME                 "other_string2"
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          string4
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_STRING)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
+    #define YAJP_DESERIALIZATION_RULE                       &actions[3]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
     test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
-    dres = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
-
-    test_is_equal(dres.status, YAJP_DESERIALIZATION_RESULT_STATUS_OK, "Deserialization failed");
+    ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    test_is_equal(ret, 0, "Deserialization failed");
 
     test_is_equal(memcmp(test_struct.string1, str1, sizeof(str1)), 0, "test_struct.string1 deserialization failed. Found: '%s', expected: '%s", test_struct.string1, str1);
     test_is_equal(memcmp(test_struct.string2, str2, sizeof(str2)), 0, "test_struct.string2 deserialization failed. Found: '%s', expected: '%s", test_struct.string2, str2);
@@ -196,37 +271,91 @@ static test_result_t yajp_deserialize_json_test_array_of_primitives_field() {
     static const int arr3[] = { -1, -2, -3, -4, -5, -62 };
     static const int arr4[] = { -10, -20, -32, -1, -44, -5, -66 };
 
-    yajp_deserialization_ctx_t ctx;
-    yajp_deserialization_result_t dres;
+    yajp_deserialization_context_t ctx;
     int ret;
-    yajp_deserialization_action_t actions[4] = { 0 };
+    yajp_deserialization_rule_t actions[4] = {0 };
     test_struct_t test_struct = { 0 };
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr1, array_handle_t, count,
-                                                                    final_dim, rows, elems, int, false, true,
-                                                                    yajp_set_int, &actions[0]);
-    test_is_equal(ret, 0, "Action initialization failed");
+    // declare rules for test_struct_t.arr1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr1
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr2, array_handle_t, count,
-                                                                    final_dim, rows, elems, int, true, true,
-                                                                    yajp_set_int, &actions[1]);
-    test_is_equal(ret, 0, "Action initialization failed");
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr3, array_of_10_ints_t, count,
-                                                                    final_dim, rows, elems, int, false, false,
-                                                                    yajp_set_int, &actions[2]);
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    test_is_equal(ret, 0, "Action initialization failed");
+    // declare rules for test_struct_t.arr2
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr2
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE | YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr4, array_of_10_ints_t, count,
-                                                                    final_dim, rows, elems, int, true, false,
-                                                                    yajp_set_int, &actions[3]);
-    test_is_equal(ret, 0, "Action initialization failed");
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
-    dres = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    #define YAJP_DESERIALIZATION_RULE                     &actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    test_is_equal(dres.status, YAJP_DESERIALIZATION_RESULT_STATUS_OK, "Deserialization failed");
+    // declare rules for test_struct_t.arr3
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr3
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                     &actions[2]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.arr4
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr4
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                     &actions[3]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
+
+    ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    test_is_equal(ret, 0, "Deserialization failed");
 
     test_is_equal(test_struct.arr1.count, ARR_LEN(arr1), "arr1 deserialization failed");
     test_is_true(test_struct.arr1.final_dim, "arr1 deserialization failed");
@@ -267,25 +396,38 @@ static test_result_t yajp_deserialize_json_test_array_of_strings_field() {
     static const char *test_arr[] = {str1, str2, str3, str4};
     static const size_t test_arr_sizes[] = { sizeof(str1), sizeof(str2), sizeof(str3), sizeof(str4) };
 
-    yajp_deserialization_ctx_t ctx;
-    yajp_deserialization_result_t dres;
+    yajp_deserialization_context_t ctx;
     int ret, i;
     size_t test_arr_elem_size;
     const char *test_arr_elem;
     char *test_struct_elem;
-    yajp_deserialization_action_t actions[1];
+    yajp_deserialization_rule_t actions[1];
     test_struct_t test_struct = { 0 };
 
-    ret = YAJP_ARRAY_OF_STRING_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, field, array_handle_t, count,
-                                                                 final_dim, rows, elems, char *, false, true,
-                                                                 yajp_set_string, &actions[0]);
-    test_is_equal(ret, 0, "Action initialization failed");
+    // declare rules for test_struct_t.arr1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          field
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_STRING)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
 
-    yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
-    dres = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         char *
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    test_is_equal(dres.status, YAJP_DESERIALIZATION_RESULT_STATUS_OK, "Deserialization failed");
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
+
+    ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    test_is_equal(ret, 0, "Deserialization failed");
 
     test_is_true(test_struct.field.final_dim, "");
     test_is_equal(test_struct.field.count, ARR_LEN(test_arr), "");
@@ -327,24 +469,35 @@ static test_result_t yajp_deserialize_json_test_matrix_of_primitives() {
             { 10, 9, 8, 7, 6 }
     };
     test_struct_t test_struct;
-    yajp_deserialization_ctx_t ctx;
-    yajp_deserialization_result_t dres;
-    yajp_deserialization_action_t actions[1];
-
+    yajp_deserialization_context_t ctx;
+    yajp_deserialization_rule_t actions[1];
     int i, j, ret;
     int test_arr_elem, test_struct_elem;
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr, array_handle_t, count,
-                                                                    final_dim, rows, elems, int, true, true,
-                                                                    yajp_set_int, &actions[0]);
-    test_is_equal(ret, 0, "");
+    // declare rules for test_struct_t.arr1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS | YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
 
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
-    test_is_equal(ret, 0, "");
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    dres = yajp_deserialize_json_string(js, sizeof(js), &ctx, &test_struct, NULL);
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    test_is_equal(dres.status, YAJP_DESERIALIZATION_RESULT_STATUS_OK, "Deserialization failed");
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
+
+    ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    test_is_equal(ret, 0, "Deserialization failed");
 
     test_is_equal(test_struct.arr->count, rows_cnt, "Amount of rows are not equal");
     test_is_false(test_struct.arr->final_dim, "Deserialization is incorrect");
@@ -396,23 +549,35 @@ static test_result_t yajp_deserialize_json_test_cube_of_primitives() {
             }
     };
 
-    yajp_deserialization_ctx_t ctx;
-    yajp_deserialization_result_t dres;
-    yajp_deserialization_action_t actions[1];
+    yajp_deserialization_context_t ctx;
+    yajp_deserialization_rule_t actions[1];
     int i, j, k, test_arr_elem, test_struct_elem, ret;
-    test_struct_t test_struct = { .arr = NULL };
+    test_struct_t test_struct;
 
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr, array_handle_t, count,
-                                                                    final_dim, rows, elems, int, true, true,
-                                                                    yajp_set_int, &actions[0]);
-    test_is_equal(ret, 0, "");
+    // declare rules for test_struct_t.arr1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS | YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
 
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
-    test_is_equal(ret, 0, "");
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    dres = yajp_deserialize_json_string(js, sizeof(js), &ctx, &test_struct, NULL);
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    test_is_equal(dres.status, YAJP_DESERIALIZATION_RESULT_STATUS_OK, "Deserialization failed");
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
+
+    ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    test_is_equal(ret, 0, "Deserialization failed");
 
     test_is_equal(test_struct.arr->count, dimI, "");
     test_is_false(test_struct.arr->final_dim, "");
@@ -459,9 +624,8 @@ static test_result_t yajp_deserialize_json_test_inherited_object() {
     static const int test_arr1[] = {1,2,3};
     static const int test_arr2[] = {-1,-2,-3};
 
-    yajp_deserialization_ctx_t ctx, inner_obj_ctx;
-    yajp_deserialization_action_t actions[2], inner_obj_actions[2];
-    yajp_deserialization_result_t dres;
+    yajp_deserialization_context_t ctx, inner_obj_ctx;
+    yajp_deserialization_rule_t actions[2], inner_obj_actions[2];
     int ret;
 
     test_struct_t test_struct;
@@ -470,26 +634,72 @@ static test_result_t yajp_deserialize_json_test_inherited_object() {
     memset(&test_struct, 0, sizeof (test_struct));
     memset(zero_arr, 0, sizeof(zero_arr));
 
-    ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(inner_object_t, f1, yajp_set_int, &inner_obj_actions[0]);
-    test_is_equal(ret, 0, "");
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(inner_object_t, f2, array_handle_t, count, final_dim,
-                                                                 rows, elems, int, false, true, yajp_set_int, &inner_obj_actions[1]);
-    test_is_equal(ret, 0, "");
+    // declare rules for inner_object_t.f1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   inner_object_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          f1
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+    #define YAJP_DESERIALIZATION_RULE                       &inner_obj_actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    ret = yajp_deserialization_ctx_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
-    test_is_equal(ret, 0, "");
+    // declare rules for inner_object_t.f2
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   inner_object_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          f2
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
 
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
 
-    ret = YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, obj1, inner_object_t, &inner_obj_ctx, false, &actions[0]);
-    test_is_equal(ret, 0, "");
-    ret = YAJP_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, obj2, inner_object_t, &inner_obj_ctx, true, &actions[1]);
-    test_is_equal(ret, 0, "");
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
-    test_is_equal(ret, 0, "");
+    #define YAJP_DESERIALIZATION_RULE                       &inner_obj_actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    dres = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    ret = yajp_deserialization_context_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
-    test_is_equal(dres.status, YAJP_DESERIALIZATION_RESULT_STATUS_OK, "");
+    // declare rules for test_struct_t.obj1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          obj1
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_OBJECT)
+
+    #define YAJP_DESERIALIZATION_OBJECT_CONTEXT             &inner_obj_ctx
+
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.obj2
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          obj2
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_OBJECT)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
+
+    #define YAJP_DESERIALIZATION_OBJECT_CONTEXT             &inner_obj_ctx
+
+    #define YAJP_DESERIALIZATION_RULE                       &actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
+
+    ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    test_is_equal(ret, 0, "Deserialization failed");
+
     test_is_not_null(test_struct.obj2, "");
     test_is_not_equal(0, memcmp(&test_struct.obj1, zero_arr, sizeof(test_struct.obj1)), "");
 
@@ -526,31 +736,71 @@ static test_result_t yajp_deserialize_json_test_array_of_objects() {
     static const int f2_vals[arr_cnt][arr_cnt] = { {1,2,3}, {-1,-2,-3}, {11,21,31} };
     inner_object_t *arr_elem;
 
-    yajp_deserialization_ctx_t ctx, inner_obj_ctx;
-    yajp_deserialization_action_t actions[1], inner_obj_actions[2];
+    yajp_deserialization_context_t ctx, inner_obj_ctx;
+    yajp_deserialization_rule_t actions[1], inner_obj_actions[2];
     int ret, i;
-
     test_struct_t test_struct;
-
-    yajp_deserialization_result_t dres;
 
     memset(&test_struct, 0, sizeof(test_struct));
 
-    ret = YAJP_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(inner_object_t, f1, yajp_set_int, &inner_obj_actions[0]);
-    test_is_equal(ret, 0, "");
-    ret = YAJP_ARRAY_OF_PRIMITIVE_FIELD_DESERIALIZATION_ACTION_INIT(inner_object_t, f2, array_handle_t, count, final_dim,
-                                                                    rows, elems, int, false, true, yajp_set_int, &inner_obj_actions[1]);
-    test_is_equal(ret, 0, "");
-    ret = yajp_deserialization_ctx_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
-    test_is_equal(ret, 0, "");
+    // declare rules for inner_object_t.f1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   inner_object_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          f1
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+    #define YAJP_DESERIALIZATION_RULE                       &inner_obj_actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
 
-    ret = YAJP_ARRAY_OF_OBJECT_FIELD_DESERIALIZATION_ACTION_INIT(test_struct_t, arr1, array_handle_t, count, final_dim, rows, elems, inner_object_t, false, true, &inner_obj_ctx, &actions[0]);
-    test_is_equal(ret, 0, "");
-    ret = yajp_deserialization_ctx_init(actions, ARR_LEN(actions), &ctx);
-    test_is_equal(ret, 0, "");
+    // declare rules for inner_object_t.f2
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   inner_object_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          f2
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
 
-    dres = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
-    test_is_equal(YAJP_DESERIALIZATION_RESULT_STATUS_OK, dres.status, "");
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                     &inner_obj_actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    ret = yajp_deserialization_context_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
+
+    // declare rules for test_struct_t.arr1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr1
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_OBJECT)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+
+    #define YAJP_DESERIALIZATION_OBJECT_CONTEXT             &inner_obj_ctx
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         inner_object_t
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                     &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT         ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
+
+    ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    test_is_equal(ret, 0, "Deserialization failed");
 
     test_is_true(test_struct.arr1.final_dim, "");
     test_is_equal(test_struct.arr1.count, arr_cnt, "");
@@ -568,5 +818,372 @@ static test_result_t yajp_deserialize_json_test_array_of_objects() {
     free(test_struct.arr1.elems);
 
 #undef arr_cnt
+    return TEST_RESULT_PASSED;
+}
+
+static test_result_t yajp_deserialize_json_test_full_example() {
+    typedef struct {
+        int int_field;
+        double other_field;
+        bool bool_field;
+
+        char string_field[ARR_LEN("test string") + 2];
+        char *other_string;
+
+        array_handle_t arr1;
+        array_handle_t *arr2;
+        array_of_10_ints_t arr3;
+        array_of_10_ints_t *arr4;
+        array_handle_t *arr5;
+        array_handle_t two_dim_arr;
+
+        inner_object_t object1;
+
+        array_handle_t obj_arr;
+    } test_struct_t;
+
+    static const char js[] = "{\n"
+                             "\t\"int_field\": \t123,\n"
+                             "\t\"double_field\":\t22.332,\n"
+                             "\t\"bool_field\":\tfalse,\n"
+                             "\t\"string_field\":\t\"test string\",\n"
+                             "\t\"other_string\":\t\"другая строка\",\n"
+                             "\t\"arr1\":\t\t\t[1, 2, 3, 4],\n"
+                             "\t\"arr2\":\t\t\t[5,6,7,8],\n"
+                             "\t\"arr3\":\t\t\t[9,10,11,12,13],\n"
+                             "\t\"arr4\":\t\t\t[14,15],\n"
+                             "\t\"arr5\":\t\t\t[\"test string\", \"другая строка\"],\n"
+                             "\t\"two_dim_arr\":\t[[1,2],[3,4]],\n"
+                             "\t\"object1\":\t\t{\n"
+                             "\t\t\"f1\":\t1,\n"
+                             "\t\t\"f2\":\t[2,3,4]\n"
+                             "\t},\n"
+                             "\t\"ignored_field\": [5,6,7,8],\n"
+                             "\t\"obj_arr\":\t[ {\"f1\": 3, \"f2\": [2,3,4]}, {\"f1\": 5, \"f2\": [4,4,4]} ]\n"
+                             "}";
+    static size_t js_size = sizeof(js);
+
+    yajp_deserialization_context_t ctx, inner_obj_ctx;
+    yajp_deserialization_rule_t actions[13], inner_obj_actions[2];
+    int ret, i;
+    test_struct_t test_struct;
+
+    // declare rules for inner_object_t.f1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   inner_object_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          f1
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+    #define YAJP_DESERIALIZATION_RULE                       &inner_obj_actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for inner_object_t.f2
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   inner_object_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          f2
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                       &inner_obj_actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    ret = yajp_deserialization_context_init(inner_obj_actions, ARR_LEN(inner_obj_actions), &inner_obj_ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
+
+    // declare rules for test_struct_t.int_field
+    #define YAJP_DESERIALIZATION_FIELD_NAME                 "int_field"
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          int_field
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+    #define YAJP_DESERIALIZATION_RULE                       &actions[0]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.other_field
+    #define YAJP_DESERIALIZATION_FIELD_NAME                 "double_field"
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          other_field
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_double
+    #define YAJP_DESERIALIZATION_RULE                       &actions[1]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.bool_field
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          bool_field
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_BOOLEAN)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_bool
+    #define YAJP_DESERIALIZATION_RULE                       &actions[2]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.string_field
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          string_field
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_STRING)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
+    #define YAJP_DESERIALIZATION_RULE                       &actions[3]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.string2
+    #define YAJP_DESERIALIZATION_FIELD_NAME                 "other_string"
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          other_string
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_STRING)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
+    #define YAJP_DESERIALIZATION_RULE                       &actions[4]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.arr1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr1
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                       &actions[5]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.arr2
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr2
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE | YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                       &actions[6]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.arr3
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr3
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                       &actions[7]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.arr4
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr4
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                       &actions[8]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.arr5
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          arr5
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_STRING)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS | YAJP_DESERIALIZATION_OPTIONS_ALLOCATE)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_string
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         char *
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                       &actions[9]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.two_dim_arr
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          two_dim_arr
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_NUMBER)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+    #define YAJP_DESERIALIZATION_SETTER                     yajp_set_int
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         int
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                       &actions[10]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.object1
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          object1
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_OBJECT)
+
+    #define YAJP_DESERIALIZATION_OBJECT_CONTEXT             &inner_obj_ctx
+
+    #define YAJP_DESERIALIZATION_RULE                       &actions[11]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    // declare rules for test_struct_t.obj_arr
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
+    #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          obj_arr
+    #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_ARRAY_OF | YAJP_DESERIALIZATION_TYPE_OBJECT)
+    #define YAJP_DESERIALIZATION_OPTIONS                    (YAJP_DESERIALIZATION_OPTIONS_ALLOCATE_ELEMENTS)
+
+    #define YAJP_DESERIALIZATION_OBJECT_CONTEXT             &inner_obj_ctx
+
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENT_TYPE         inner_object_t
+    #define YAJP_DESERIALIZATION_ARRAY_ELEMENTS             elems
+    #define YAJP_DESERIALIZATION_ARRAY_ROWS                 rows
+    #define YAJP_DESERIALIZATION_ARRAY_COUNTER              count
+    #define YAJP_DESERIALIZATION_ARRAY_FINAL_DIM            final_dim
+
+    #define YAJP_DESERIALIZATION_RULE                       &actions[12]
+    #define YAJP_DESERIALIZATION_RULE_INIT_RESULT           ret
+    #include <yajp/deserialization_action_initialization.h>
+    test_is_equal(ret, 0, "Failed to initialize action");
+    // ==========================================
+
+    ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
+    test_is_equal(ret, 0, "Failed to initialize deserialization context");
+
+    memset(&test_struct, 0, sizeof(test_struct));
+
+    ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
+    test_is_equal(ret, 0, "Deserialization failed");
+
+    test_is_equal(123, test_struct.int_field, "");
+    test_is_equal_prec(22.332, test_struct.other_field, DOUBLE_PRECISION, "");
+    test_is_false(test_struct.bool_field, "");
+    test_is_equal(0, memcmp(test_struct.string_field, "test string", sizeof("test string")), "");
+    test_is_equal(0, memcmp(test_struct.other_string, "другая строка", sizeof("другая строка")), "");
+
+    int arr1[] = {1, 2, 3, 4};
+    test_is_true(test_struct.arr1.final_dim, "");
+    test_is_equal(ARR_LEN(arr1), test_struct.arr1.count, "");
+    test_is_equal(0, memcmp(test_struct.arr1.elems, arr1, sizeof(arr1)), "");
+
+    int arr2[] = {5, 6, 7, 8};
+    test_is_not_null(test_struct.arr2, "");
+    test_is_true(test_struct.arr2->final_dim, "");
+    test_is_equal(ARR_LEN(arr2), test_struct.arr2->count, "");
+    test_is_equal(0, memcmp(test_struct.arr2->elems, arr2, sizeof(arr2)), "");
+
+    int arr3[] = {9,10,11,12,13};
+    test_is_true(test_struct.arr3.final_dim, "");
+    test_is_equal(ARR_LEN(arr3), test_struct.arr3.count, "");
+    test_is_equal(0, memcmp(test_struct.arr3.elems, arr3, sizeof(arr3)), "");
+
+    int arr4[] = {14,15};
+    test_is_not_null(test_struct.arr4, "");
+    test_is_true(test_struct.arr4->final_dim, "");
+    test_is_equal(ARR_LEN(arr4), test_struct.arr4->count, "");
+    test_is_equal(0, memcmp(test_struct.arr4->elems, arr4, sizeof(arr4)), "");
+
+    test_is_not_null(test_struct.arr5, "");
+    test_is_true(test_struct.arr5->final_dim, "");
+    test_is_equal(2, test_struct.arr5->count, "");
+
+    char *str;
+
+    str = ((char **)test_struct.arr5->elems)[0];
+    test_is_equal(0, memcmp(str, "test string", sizeof("test string")), "");
+
+    str = ((char **)test_struct.arr5->elems)[1];
+    test_is_equal(0, memcmp(str, "другая строка", sizeof("другая строка")), "");
+
+    int two_dim_arr[2][2] = {{1,2},{3,4}};
+    test_is_false(test_struct.two_dim_arr.final_dim, "");
+    test_is_equal(2, test_struct.two_dim_arr.count, "");
+    array_handle_t *row ;
+    for (i = 0; i < 2; i++) {
+        row = &test_struct.two_dim_arr.rows[i];
+        test_is_true(row->final_dim, "");
+        test_is_equal(2, row->count, "");
+        test_is_equal(0, memcmp(two_dim_arr[i], row->elems, row->count * sizeof(int)), "");
+    }
+
+    test_is_equal(1, test_struct.object1.f1, "");
+    int obj_f2[] = {2,3,4};
+    test_is_true(test_struct.object1.f2.final_dim, "");
+    test_is_equal(ARR_LEN(obj_f2), test_struct.object1.f2.count, "");
+    test_is_equal(0, memcmp(test_struct.object1.f2.elems, obj_f2, sizeof(obj_f2)), "");
+
+    int obj_arr_f1[] = {3, 5};
+    int obj_arr_f2[2][3] = { {2,3,4}, {4,4,4}};
+    test_is_true(test_struct.obj_arr.final_dim, "");
+    test_is_equal(2, test_struct.obj_arr.count, "");
+    inner_object_t *inner_object;
+    for (i = 0; i < 2; i++) {
+        inner_object = &((inner_object_t *)test_struct.obj_arr.elems)[i];
+
+        test_is_equal(obj_arr_f1[i], inner_object->f1, "");
+        test_is_true(inner_object->f2.final_dim, "");
+        test_is_equal(3, inner_object->f2.count, "");
+        test_is_equal(0, memcmp(inner_object->f2.elems, obj_arr_f2[i], inner_object->f2.count * sizeof(int )), "");
+    }
+
     return TEST_RESULT_PASSED;
 }
