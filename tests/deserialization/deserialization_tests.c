@@ -850,7 +850,6 @@ static test_result_t yajp_deserialize_json_test_full_example() {
                              "\t\"other_string\":\t\"другая строка\",\n"
                              "\t\"arr1\":\t\t\t[1, 2, 3, 4],\n"
                              "\t\"arr2\":\t\t\t[5,6,7,8],\n"
-                             "\t\"ignored_field\":\t\t\t[5,6,7,8],\n"
                              "\t\"arr3\":\t\t\t[9,10,11,12,13],\n"
                              "\t\"arr4\":\t\t\t[14,15],\n"
                              "\t\"arr5\":\t\t\t[\"test string\", \"другая строка\"],\n"
@@ -859,7 +858,8 @@ static test_result_t yajp_deserialize_json_test_full_example() {
                              "\t\t\"f1\":\t1,\n"
                              "\t\t\"f2\":\t[2,3,4]\n"
                              "\t},\n"
-                             "\t\"obj_arr\":\t[ {f1: 3, f2: [2,3,4]}, {f1: 5, f2: [4,4,4]} ]\n"
+                             "\t\"ignored_field\": [5,6,7,8],\n"
+                             "\t\"obj_arr\":\t[ {\"f1\": 3, \"f2\": [2,3,4]}, {\"f1\": 5, \"f2\": [4,4,4]} ]\n"
                              "}";
     static size_t js_size = sizeof(js);
 
@@ -902,6 +902,7 @@ static test_result_t yajp_deserialize_json_test_full_example() {
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
     // declare rules for test_struct_t.int_field
+    #define YAJP_DESERIALIZATION_FIELD_NAME                 "int_field"
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_HOLDER_TYPE   test_struct_t
     #define YAJP_DESERIALIZATION_STRUCT_FIELD_NAME          int_field
     #define YAJP_DESERIALIZATION_FIELD_TYPE                 (YAJP_DESERIALIZATION_TYPE_NUMBER)
@@ -1108,8 +1109,81 @@ static test_result_t yajp_deserialize_json_test_full_example() {
     ret = yajp_deserialization_context_init(actions, ARR_LEN(actions), &ctx);
     test_is_equal(ret, 0, "Failed to initialize deserialization context");
 
+    memset(&test_struct, 0, sizeof(test_struct));
+
     ret = yajp_deserialize_json_string(js, js_size, &ctx, &test_struct, NULL);
     test_is_equal(ret, 0, "Deserialization failed");
+
+    test_is_equal(123, test_struct.int_field, "");
+    test_is_equal_prec(22.332, test_struct.other_field, DOUBLE_PRECISION, "");
+    test_is_false(test_struct.bool_field, "");
+    test_is_equal(0, memcmp(test_struct.string_field, "test string", sizeof("test string")), "");
+    test_is_equal(0, memcmp(test_struct.other_string, "другая строка", sizeof("другая строка")), "");
+
+    int arr1[] = {1, 2, 3, 4};
+    test_is_true(test_struct.arr1.final_dim, "");
+    test_is_equal(ARR_LEN(arr1), test_struct.arr1.count, "");
+    test_is_equal(0, memcmp(test_struct.arr1.elems, arr1, sizeof(arr1)), "");
+
+    int arr2[] = {5, 6, 7, 8};
+    test_is_not_null(test_struct.arr2, "");
+    test_is_true(test_struct.arr2->final_dim, "");
+    test_is_equal(ARR_LEN(arr2), test_struct.arr2->count, "");
+    test_is_equal(0, memcmp(test_struct.arr2->elems, arr2, sizeof(arr2)), "");
+
+    int arr3[] = {9,10,11,12,13};
+    test_is_true(test_struct.arr3.final_dim, "");
+    test_is_equal(ARR_LEN(arr3), test_struct.arr3.count, "");
+    test_is_equal(0, memcmp(test_struct.arr3.elems, arr3, sizeof(arr3)), "");
+
+    int arr4[] = {14,15};
+    test_is_not_null(test_struct.arr4, "");
+    test_is_true(test_struct.arr4->final_dim, "");
+    test_is_equal(ARR_LEN(arr4), test_struct.arr4->count, "");
+    test_is_equal(0, memcmp(test_struct.arr4->elems, arr4, sizeof(arr4)), "");
+
+    test_is_not_null(test_struct.arr5, "");
+    test_is_true(test_struct.arr5->final_dim, "");
+    test_is_equal(2, test_struct.arr5->count, "");
+
+    char *str;
+
+    str = ((char **)test_struct.arr5->elems)[0];
+    test_is_equal(0, memcmp(str, "test string", sizeof("test string")), "");
+
+    str = ((char **)test_struct.arr5->elems)[1];
+    test_is_equal(0, memcmp(str, "другая строка", sizeof("другая строка")), "");
+
+    int two_dim_arr[2][2] = {{1,2},{3,4}};
+    test_is_false(test_struct.two_dim_arr.final_dim, "");
+    test_is_equal(2, test_struct.two_dim_arr.count, "");
+    array_handle_t *row ;
+    for (i = 0; i < 2; i++) {
+        row = &test_struct.two_dim_arr.rows[i];
+        test_is_true(row->final_dim, "");
+        test_is_equal(2, row->count, "");
+        test_is_equal(0, memcmp(two_dim_arr[i], row->elems, row->count * sizeof(int)), "");
+    }
+
+    test_is_equal(1, test_struct.object1.f1, "");
+    int obj_f2[] = {2,3,4};
+    test_is_true(test_struct.object1.f2.final_dim, "");
+    test_is_equal(ARR_LEN(obj_f2), test_struct.object1.f2.count, "");
+    test_is_equal(0, memcmp(test_struct.object1.f2.elems, obj_f2, sizeof(obj_f2)), "");
+
+    int obj_arr_f1[] = {3, 5};
+    int obj_arr_f2[2][3] = { {2,3,4}, {4,4,4}};
+    test_is_true(test_struct.obj_arr.final_dim, "");
+    test_is_equal(2, test_struct.obj_arr.count, "");
+    inner_object_t *inner_object;
+    for (i = 0; i < 2; i++) {
+        inner_object = &((inner_object_t *)test_struct.obj_arr.elems)[i];
+
+        test_is_equal(obj_arr_f1[i], inner_object->f1, "");
+        test_is_true(inner_object->f2.final_dim, "");
+        test_is_equal(3, inner_object->f2.count, "");
+        test_is_equal(0, memcmp(inner_object->f2.elems, obj_arr_f2[i], inner_object->f2.count * sizeof(int )), "");
+    }
 
     return TEST_RESULT_PASSED;
 }

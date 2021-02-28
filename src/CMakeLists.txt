@@ -31,7 +31,7 @@ if (YAJP_GENERATE_PARSER)
 
     add_custom_command(
             OUTPUT parser.c
-            COMMAND ${LEMON_EXECUTABLE} ${YAJP_PARSER_SOURCE} -q -T"${YAJP_PARSER_TEMPLATE}" -d${CMAKE_CURRENT_BINARY_DIR}
+            COMMAND ${LEMON_EXECUTABLE} ${YAJP_PARSER_SOURCE} -l -q -T"${YAJP_PARSER_TEMPLATE}" -d${CMAKE_CURRENT_BINARY_DIR}
             COMMAND "${CMAKE_COMMAND}" -E rename "${CMAKE_CURRENT_BINARY_DIR}/parser.h" "${CMAKE_CURRENT_BINARY_DIR}/parser_tokens.h"  # lemon also generates header file with tokens we will use it to initialize enum vales in token_type.h
             DEPENDS ${YAJP_PARSER_SOURCE} ${YAJP_PARSER_TEMPLATE}
             COMMENT "Generating parser from \"${YAJP_PARSER_SOURCE}\" and \"${YAJP_PARSER_TEMPLATE}\" using \"${LEMON_EXECUTABLE}\""

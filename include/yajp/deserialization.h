@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <limits.h>
 
 /**
  * @details     @c YAJP_DESERIALIZATION_FIELD_TYPE declaration value used to specify that deserializing type is number (integral or real)
@@ -96,15 +97,25 @@ typedef struct yajp_deserialization_rule yajp_deserialization_rule_t;
  * Deserialization context
  */
 struct yajp_deserialization_context {
-   int rules_cnt;
-   yajp_deserialization_rule_t *rules;
+   const void *rules;
 };
+
+#if UINT_MAX == 0xffffffffu
+    typedef unsigned int field_key_t;
+#elif ULONG_MAX == 0xffffffffu
+    typedef unsigned long field_key_t;
+#endif
 
 /**
  * Description of deserialization action
  */
 struct yajp_deserialization_rule {
-    int field_key;                                  // hash of field used for fast search
+    field_key_t field_key;
+
+#if DEBUG
+    const char *field_name;                         // name of field
+    size_t field_name_size;                  // size of field without '\0;
+#endif
 
     size_t field_offset;                            // offset of field in structure
     size_t field_size;                              // size of field

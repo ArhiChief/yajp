@@ -22,54 +22,54 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "khash.h"
 #include "deserialization_misc.h"
 
-int yajp_calculate_hash(const char *data, size_t data_size) {
-    int hash = 5381;
-
-    if (NULL == data || 0 == data_size) {
-        return 0;
-    }
-
-    while (data_size--) {
-        hash = ((hash << 5) + hash) + *data++;
-    }
-
-    return hash;
+field_key_t yajp_calculate_hash(const uint8_t *data, size_t data_size) {
+    return __ac_X31_hash_string(data, data_size);
 }
 
-static int actions_comparator(const void *pkey, const void *pelem) {
-    return ((const yajp_deserialization_rule_t *) pkey)->field_key -
-           ((const yajp_deserialization_rule_t *) pelem)->field_key;
-}
-
-void yajp_sort_actions_in_context(yajp_deserialization_context_t *ctx) {
-    if (NULL != ctx->rules && 1 < ctx->rules_cnt) {
-        qsort(ctx->rules, ctx->rules_cnt, sizeof(*ctx->rules), actions_comparator);
-    }
-}
+KHASH_MAP_INIT_INT(yajp, const yajp_deserialization_rule_t *)
 
 const yajp_deserialization_rule_t *yajp_find_action(const yajp_deserialization_context_t *ctx, const uint8_t *name,
                                                     size_t name_size) {
     const yajp_deserialization_rule_t *action = NULL;
-    const yajp_deserialization_rule_t key = {.field_key = yajp_calculate_hash(name, name_size)};
+    field_key_t key = yajp_calculate_hash(name, name_size);
+    khash_t(yajp) *hashmap = (khash_t(yajp) *)ctx->rules;
+    khiter_t iterator;
 
-    if (NULL != ctx && NULL != ctx->rules && 0 < ctx->rules_cnt) {
-        action = bsearch(&key, ctx->rules, ctx->rules_cnt, sizeof(*ctx->rules), actions_comparator);
+    iterator = kh_get(yajp, hashmap, key);
+    if (kh_exist(hashmap, iterator)) {
+        action = kh_value(hashmap, iterator);
     }
 
     return action;
 }
 
 int yajp_deserialization_context_init(yajp_deserialization_rule_t *acts, int count, yajp_deserialization_context_t *ctx) {
-    memset(ctx, 0, sizeof(*ctx));
+    int ret, i;
+    khash_t(yajp) *hashmap = kh_init(yajp);
+    field_key_t key;
+    khiter_t iterator;
 
-    ctx->rules = acts;
-    ctx->rules_cnt = count;
+    kh_resize(yajp, hashmap, count);
 
-    yajp_sort_actions_in_context(ctx);
+    for (i = 0; i < count; i++) {
+        key = acts[i].field_key;
+        iterator = kh_put(yajp, hashmap, key, &ret);
+        if (!ret) {
+            kh_del(yajp, hashmap, iterator);
+            kh_destroy(yajp, hashmap);
+            goto end;
+        }
 
-    return 0;
+        kh_value(hashmap, iterator) = &acts[i];
+    }
+
+    ctx->rules = hashmap;
+
+end:
+    return (!ret) ? -1 : 0;
 }
 
 int yajp_deserialization_rule_init(const char *name,
@@ -87,7 +87,11 @@ int yajp_deserialization_rule_init(const char *name,
                                    yajp_deserialization_rule_t *result) {
 
     result->options = options;
-    result->field_key = yajp_calculate_hash(name, name_size);
+#if DEBUG
+    result->field_name = name;
+    result->field_name_size = name_size;
+#endif
+    result->field_key = yajp_calculate_hash((const uint8_t *)name, name_size);
     result->field_size = field_size;
     result->field_offset = field_offset;
 

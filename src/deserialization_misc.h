@@ -33,13 +33,7 @@
  * @param data_size
  * @return
  */
-int yajp_calculate_hash(const char *data, size_t data_size);
-
-/**
- *
- * @param ctx
- */
-void yajp_sort_actions_in_context(yajp_deserialization_context_t *ctx);
+field_key_t yajp_calculate_hash(const uint8_t *data, size_t data_size);
 
 /**
  *
