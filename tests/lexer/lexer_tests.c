@@ -30,28 +30,28 @@
 
 
 /* test cases prototypes */
-static test_result_t yajp_lexer_init_input_test_empty_stream(int argc, char **argv);
-static test_result_t yajp_lexer_init_input_test_stream_small(int argc, char **argv);
-static test_result_t yajp_lexer_init_input_test_stream_big(int argc, char **argv);
-static test_result_t yajp_lexer_init_input_test_stream_equal(int argc, char **argv);
+static test_result_t yajp_lexer_init_input_test_empty_stream();
+static test_result_t yajp_lexer_init_input_test_stream_small();
+static test_result_t yajp_lexer_init_input_test_stream_big();
+static test_result_t yajp_lexer_init_input_test_stream_equal();
 
-static test_result_t yajp_lexer_release_input_test(int argc, char **argv);
+static test_result_t yajp_lexer_release_input_test();
 
-static test_result_t yajp_lexer_pick_token_test_primitive_token(int argc, char **argv);
-static test_result_t yajp_lexer_pick_token_test_extended_number(int argc, char **argv);
-static test_result_t yajp_lexer_pick_token_test_extended_bool(int argc, char **argv);
-static test_result_t yajp_lexer_pick_token_test_extended_small_string(int argc, char **argv);
-static test_result_t yajp_lexer_pick_token_test_extended_large_string(int argc, char **argv);
+static test_result_t yajp_lexer_pick_token_test_primitive_token();
+static test_result_t yajp_lexer_pick_token_test_extended_number();
+static test_result_t yajp_lexer_pick_token_test_extended_bool();
+static test_result_t yajp_lexer_pick_token_test_extended_small_string();
+static test_result_t yajp_lexer_pick_token_test_extended_large_string();
 
-static test_result_t yajp_lexer_release_token_test_primitive(int argc, char **argv);
-static test_result_t yajp_lexer_release_token_test_extended_small(int argc, char **argv);
-static test_result_t yajp_lexer_release_token_test_extended_big(int argc, char **argv);
+static test_result_t yajp_lexer_release_token_test_primitive();
+static test_result_t yajp_lexer_release_token_test_extended_small();
+static test_result_t yajp_lexer_release_token_test_extended_big();
 
-static test_result_t yajp_lexer_fill_input_test_no_realloc(int argc, char **argv);
-static test_result_t yajp_lexer_fill_input_test_need_realloc(int argc, char **argv);
-static test_result_t yajp_lexer_fill_input_test_need_huge_realloc(int argc, char **argv);
+static test_result_t yajp_lexer_fill_input_test_no_realloc();
+static test_result_t yajp_lexer_fill_input_test_need_realloc();
+static test_result_t yajp_lexer_fill_input_test_need_huge_realloc();
 
-static test_result_t yajp_lexer_get_next_token_test(int argc, char **argv);
+static test_result_t yajp_lexer_get_next_token_test();
 
 /* test suite declaration and initialization */
 const test_case_t test_suite[] = {
@@ -116,7 +116,7 @@ static char get_random_char() {
 }
 
 /* tests cases implementation */
-static test_result_t yajp_lexer_init_input_test_empty_stream(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_init_input_test_empty_stream() {
     static const char js[] = {};
     yajp_lexer_input_t input;
     FILE *f;
@@ -155,7 +155,7 @@ static test_result_t yajp_lexer_init_input_test_empty_stream(UNUSED int argc, UN
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_init_input_test_stream_small(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_init_input_test_stream_small() {
     static char js[YAJP_BUFFER_SIZE / sizeof(char ) / 2 + 1];
     yajp_lexer_input_t input;
     FILE *f;
@@ -204,7 +204,7 @@ static test_result_t yajp_lexer_init_input_test_stream_small(UNUSED int argc, UN
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_init_input_test_stream_big(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_init_input_test_stream_big() {
     static char js[(YAJP_BUFFER_SIZE / sizeof(char)) * 2 + 1];
     yajp_lexer_input_t input;
     FILE *f;
@@ -249,7 +249,7 @@ static test_result_t yajp_lexer_init_input_test_stream_big(UNUSED int argc, UNUS
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_init_input_test_stream_equal(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_init_input_test_stream_equal() {
     static char js[(YAJP_BUFFER_SIZE / sizeof(char))];
     yajp_lexer_input_t input;
     FILE *f;
@@ -295,7 +295,7 @@ static test_result_t yajp_lexer_init_input_test_stream_equal(UNUSED int argc, UN
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_release_input_test(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_release_input_test() {
     static char js[(YAJP_BUFFER_SIZE / sizeof(char))];
     yajp_lexer_input_t input;
     FILE *f;
@@ -339,7 +339,7 @@ static test_result_t yajp_lexer_release_input_test(UNUSED int argc, UNUSED char 
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_pick_token_test_primitive_token(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_pick_token_test_primitive_token() {
     uint8_t js[] = "{[]},:null";
     yajp_lexer_token_t picked_token;
     const size_t zero_block_size = YAJP_BUFFER_SIZE / sizeof(uint8_t);
@@ -417,7 +417,7 @@ static test_result_t yajp_lexer_pick_token_test_primitive_token(UNUSED int argc,
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_pick_token_test_extended_number(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_pick_token_test_extended_number() {
     uint8_t js[] = "+13332.122e-23";
 
     yajp_lexer_input_t intput = {
@@ -453,7 +453,7 @@ static test_result_t yajp_lexer_pick_token_test_extended_number(UNUSED int argc,
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_pick_token_test_extended_bool(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_pick_token_test_extended_bool() {
     uint8_t js[] = "true";
 
     yajp_lexer_input_t input = {
@@ -489,7 +489,7 @@ static test_result_t yajp_lexer_pick_token_test_extended_bool(UNUSED int argc, U
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_pick_token_test_extended_small_string(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_pick_token_test_extended_small_string() {
     const size_t js_siz = YAJP_BUFFER_SIZE;
     uint8_t *js = malloc(js_siz);
     yajp_lexer_input_t input = {
@@ -527,7 +527,7 @@ static test_result_t yajp_lexer_pick_token_test_extended_small_string(UNUSED int
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_pick_token_test_extended_large_string(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_pick_token_test_extended_large_string() {
     const size_t js_siz = 2 * YAJP_BUFFER_SIZE;
     uint8_t *js = malloc(js_siz);
     yajp_lexer_input_t input = {
@@ -564,8 +564,7 @@ static test_result_t yajp_lexer_pick_token_test_extended_large_string(UNUSED int
     return TEST_RESULT_PASSED;
 }
 
-
-static test_result_t yajp_lexer_release_token_test_primitive(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_release_token_test_primitive() {
     uint8_t js[] = "null";
     yajp_lexer_input_t input = {
             .buffer = js,
@@ -590,7 +589,7 @@ static test_result_t yajp_lexer_release_token_test_primitive(UNUSED int argc, UN
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_release_token_test_extended_small(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_release_token_test_extended_small() {
     uint8_t js[] = "1234";
     yajp_lexer_input_t input = {
             .buffer = js,
@@ -615,7 +614,7 @@ static test_result_t yajp_lexer_release_token_test_extended_small(UNUSED int arg
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_release_token_test_extended_big(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_release_token_test_extended_big() {
     const size_t js_siz = 2 * YAJP_BUFFER_SIZE;
     uint8_t *js = malloc(js_siz);
     yajp_lexer_input_t input = {
@@ -653,17 +652,17 @@ static test_result_t yajp_lexer_release_token_test_extended_big(UNUSED int argc,
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_fill_input_test_no_realloc(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_fill_input_test_no_realloc() {
     // todo: implement
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_fill_input_test_need_realloc(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_fill_input_test_need_realloc() {
     // todo: implement
     return TEST_RESULT_PASSED;
 }
 
-static test_result_t yajp_lexer_fill_input_test_need_huge_realloc(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_fill_input_test_need_huge_realloc() {
     // todo: implement
     return TEST_RESULT_PASSED;
 }
@@ -875,7 +874,7 @@ static const token_checker_t tokens_checkers[] = {
 static const size_t a = sizeof(tokens_checkers);
 static const int tokens_checkers_count = ARR_LEN(tokens_checkers);
 
-static test_result_t yajp_lexer_get_next_token_test(UNUSED int argc, UNUSED char **argv) {
+static test_result_t yajp_lexer_get_next_token_test() {
 
 
     FILE *stream;

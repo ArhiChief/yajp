@@ -63,7 +63,7 @@ static test_result_t run_test(long test_num) {
     test_case = &test_suite[test_num - 1];
 
     fprintf(stderr, "| Starting test %ld/%ld:\t%s\n|--> %s\n", test_num, test_count, test_case->name, test_case->description);
-    result = test_case->method(test_case->argc, test_case->argv);
+    result = test_case->method();
     fprintf(stderr, "| Test %ld/%ld ended with %s\n\n", test_num, test_count, test_result_to_string(result));
 
     return result;
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
     time_t t;
     test_result_t result = TEST_RESULT_PASSED, tmp_res;
 
-    if (argc < 2) {
+    if (argc != 2) {
         return TEST_RESULT_INVALID_ARGS;
     }
 

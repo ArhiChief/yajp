@@ -28,10 +28,6 @@
 
 #include "token_type.h"
 
-#if !defined(YAJP_TRACK_STREAM)
-#   define YAJP_TRACK_STREAM
-#endif
-
 /**
  * Size of buffers in bytes
  */
@@ -39,11 +35,10 @@
 #   define YAJP_BUFFER_SIZE    32
 #endif
 
-
 /**
  *  Represent recognized token picked from stream
  */
-typedef struct {
+typedef struct yajp_lexer_token {
     yajp_token_type_t token;                                        /* Type of picked token */
     struct {
         size_t value_size;                                          /* Size in bytes of picked token value */
@@ -58,7 +53,7 @@ typedef struct {
 /**
  * Represent lexer input
  */
-typedef struct {
+typedef struct yajp_lexer_input {
     FILE *json;         /* Pointer to stream with json */
     uint8_t *buffer;    /* Buffer of scanning chars */
     size_t buffer_size; /* Size of buffer in bytes */
